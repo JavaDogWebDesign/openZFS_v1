@@ -1,31 +1,40 @@
 """System user command executor - wraps useradd/userdel/usermod/etc."""
 
+import asyncio
+
 from ..utils.command import run_command, CommandResult
+
+# Serialize user-management commands to prevent /etc/passwd & /etc/group lock contention
+_user_lock = asyncio.Lock()
 
 
 async def create_user(username: str, password: str, groups: list[str]) -> CommandResult:
-    args = ["-m", "-s", "/bin/bash"]
-    if groups:
-        args.extend(["-G", ",".join(groups)])
-    args.append(username)
-    result = await run_command("useradd", args)
-    if not result.success:
-        return result
-    # Set password via chpasswd
-    pw_result = await run_command("chpasswd", [], stdin_data=f"{username}:{password}")
-    return pw_result
+    async with _user_lock:
+        args = ["-m", "-s", "/bin/bash"]
+        if groups:
+            args.extend(["-G", ",".join(groups)])
+        args.append(username)
+        result = await run_command("useradd", args)
+        if not result.success:
+            return result
+        # Set password via chpasswd
+        pw_result = await run_command("chpasswd", [], stdin_data=f"{username}:{password}")
+        return pw_result
 
 
 async def delete_user(username: str) -> CommandResult:
-    return await run_command("userdel", ["-r", username])
+    async with _user_lock:
+        return await run_command("userdel", ["-r", username])
 
 
 async def change_password(username: str, password: str) -> CommandResult:
-    return await run_command("chpasswd", [], stdin_data=f"{username}:{password}")
+    async with _user_lock:
+        return await run_command("chpasswd", [], stdin_data=f"{username}:{password}")
 
 
 async def set_groups(username: str, groups: list[str]) -> CommandResult:
-    return await run_command("usermod", ["-G", ",".join(groups), username])
+    async with _user_lock:
+        return await run_command("usermod", ["-G", ",".join(groups), username])
 
 
 async def set_smb_password(username: str, password: str) -> CommandResult:

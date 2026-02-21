@@ -18,12 +18,18 @@ export default function UsersPage() {
   const { data: users = [], isLoading } = useQuery({ queryKey: ['users'], queryFn: listUsers });
   const { data: smbShares = [] } = useQuery({ queryKey: ['smb-shares'], queryFn: listSMBShares });
 
+  const [createError, setCreateError] = useState<string | null>(null);
+
   const createMutation = useMutation({
     mutationFn: ({ username, password, groups }: { username: string; password: string; groups: string[] }) =>
       createUser({ username, password, groups }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       setShowCreate(false);
+      setCreateError(null);
+    },
+    onError: (err: any) => {
+      setCreateError(err?.response?.data?.detail || err?.message || 'Failed to create user');
     },
   });
 
@@ -73,11 +79,18 @@ export default function UsersPage() {
       </div>
 
       {showCreate && (
-        <UserCreateForm
-          onSubmit={(username, password, groups) => createMutation.mutate({ username, password, groups })}
-          onCancel={() => setShowCreate(false)}
-          isSubmitting={createMutation.isPending}
-        />
+        <>
+          {createError && (
+            <div className="rounded-md bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/50 dark:text-red-400">
+              {createError}
+            </div>
+          )}
+          <UserCreateForm
+            onSubmit={(username, password, groups) => { setCreateError(null); createMutation.mutate({ username, password, groups }); }}
+            onCancel={() => { setShowCreate(false); setCreateError(null); }}
+            isSubmitting={createMutation.isPending}
+          />
+        </>
       )}
 
       <UserList
