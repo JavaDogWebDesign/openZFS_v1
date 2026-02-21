@@ -48,6 +48,17 @@ class SnapshotResponse(BaseModel):
     creation: str
 
 
+class SnapshotRename(BaseModel):
+    new_name: str = Field(..., min_length=1, max_length=64)
+
+    @field_validator("new_name")
+    @classmethod
+    def check_new_name(cls, v: str) -> str:
+        if not validate_snapshot_name(v):
+            raise ValueError("Invalid snapshot name")
+        return v
+
+
 class CloneCreate(BaseModel):
     target: str = Field(..., min_length=1, max_length=256)
 

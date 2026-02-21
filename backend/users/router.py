@@ -26,6 +26,11 @@ async def create_user(
     return await service.create_user(user.username, user.password, user.groups)
 
 
+@router.get("/groups")
+async def list_groups(current_user: dict = Depends(get_current_user)):
+    return await service.list_groups()
+
+
 @router.delete("/{username}")
 async def delete_user(
     username: str,

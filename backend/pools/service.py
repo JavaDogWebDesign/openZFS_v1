@@ -57,6 +57,21 @@ async def create_pool(
 async def destroy_pool(name: str) -> None:
     if not validate_pool_name(name):
         raise HTTPException(status_code=400, detail="Invalid pool name")
+
+    # Collect mountpoints for all datasets in this pool, then remove shares/exports
+    from ..datasets.service import list_datasets
+    from ..shares.service import remove_shares_for_paths
+
+    try:
+        datasets = await list_datasets(pool=name)
+        pool_paths = {ds["mountpoint"] for ds in datasets if ds.get("mountpoint") and ds["mountpoint"] != "-"}
+        # Also include the pool root mount (e.g. /tank3)
+        pool_paths.add(f"/{name}")
+        if pool_paths:
+            await remove_shares_for_paths(pool_paths)
+    except Exception as e:
+        logger.warning("Failed to clean up shares before destroying pool %s: %s", name, e)
+
     result = await zfs_executor.zpool_destroy(name)
     if not result.success:
         raise HTTPException(status_code=400, detail=f"Failed to destroy pool: {result.stderr}")

@@ -13,6 +13,7 @@ const PoolDetailPage = lazy(() => import('./pages/PoolDetailPage'));
 const DatasetsPage = lazy(() => import('./pages/DatasetsPage'));
 const DrivesPage = lazy(() => import('./pages/DrivesPage'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
+const SnapshotsPage = lazy(() => import('./pages/SnapshotsPage'));
 const SharesPage = lazy(() => import('./pages/SharesPage'));
 
 const queryClient = new QueryClient({
@@ -53,6 +54,7 @@ export default function App() {
                   <Route path="/pools" element={<PoolsPage />} />
                   <Route path="/pools/:name" element={<PoolDetailPage />} />
                   <Route path="/datasets" element={<DatasetsPage />} />
+                  <Route path="/snapshots" element={<SnapshotsPage />} />
                   <Route path="/drives" element={<DrivesPage />} />
                   <Route path="/users" element={<UsersPage />} />
                   <Route path="/shares" element={<SharesPage />} />

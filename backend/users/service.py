@@ -88,6 +88,23 @@ async def update_groups(username: str, groups: list[str]) -> dict:
     return {"detail": "Groups updated"}
 
 
+async def list_groups() -> list[dict]:
+    """List all system groups with GID >= 1000 (excluding nobody/65534)."""
+    result = await user_executor.get_user_groups("")
+    if not result.success:
+        raise HTTPException(status_code=500, detail=f"Failed to list groups: {result.stderr}")
+    groups = []
+    for line in result.stdout.splitlines():
+        parts = line.split(":")
+        if len(parts) >= 4:
+            gid = int(parts[2])
+            if gid < 1000 or gid == 65534:
+                continue
+            members = [m for m in parts[3].split(",") if m]
+            groups.append({"name": parts[0], "gid": gid, "members": members})
+    return groups
+
+
 async def set_smb_password(username: str, password: str) -> dict:
     if not validate_username(username):
         raise HTTPException(status_code=400, detail="Invalid username")

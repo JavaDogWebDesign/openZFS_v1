@@ -181,6 +181,7 @@ def parse_lsblk(output: str) -> list[dict[str, Any]]:
                     "size": int(device.get("size", 0)),
                     "model": device.get("model", "").strip() if device.get("model") else "",
                     "serial": device.get("serial", "").strip() if device.get("serial") else "",
+                    "rota": device.get("rota"),
                     "partitions": [
                         {
                             "name": child.get("name", ""),

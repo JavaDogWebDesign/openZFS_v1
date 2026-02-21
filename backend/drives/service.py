@@ -82,13 +82,16 @@ async def get_smart_info(device: str) -> dict[str, Any]:
     return info
 
 
-def _determine_drive_type(smart_info: dict[str, Any], device_name: str) -> str:
+def _determine_drive_type(smart_info: dict[str, Any], device_name: str, rota: bool | None = None) -> str:
     """Determine if drive is HDD, SSD, or NVMe."""
     if device_name.startswith("nvme"):
         return "NVMe"
     rotation = smart_info.get("rotation_rate")
     if rotation is not None:
         return "HDD" if rotation > 0 else "SSD"
+    # Fallback: use lsblk ROTA column (kernel-level rotational flag)
+    if rota is not None:
+        return "HDD" if rota else "SSD"
     return "SSD"  # Default assumption for non-rotating media
 
 
@@ -120,7 +123,7 @@ async def _get_pool_membership() -> dict[str, str]:
 
 async def list_drives() -> list[dict[str, Any]]:
     """List all drives with SMART info and pool membership."""
-    result = await run_command("lsblk", ["-Jb", "--output", "NAME,SIZE,TYPE,MODEL,SERIAL,MOUNTPOINT,FSTYPE"])
+    result = await run_command("lsblk", ["-Jb", "--output", "NAME,SIZE,TYPE,MODEL,SERIAL,MOUNTPOINT,FSTYPE,ROTA"])
     if not result.success:
         raise HTTPException(status_code=500, detail=f"Failed to list disks: {result.stderr}")
 
@@ -137,7 +140,7 @@ async def list_drives() -> list[dict[str, Any]]:
             logger.warning("SMART query failed for %s: %s", disk["name"], smart)
             smart = {"available": False, "healthy": None, "temperature": None, "power_on_hours": None, "model_family": None, "rotation_rate": None}
 
-        drive_type = _determine_drive_type(smart, disk["name"])
+        drive_type = _determine_drive_type(smart, disk["name"], disk.get("rota"))
 
         # Check pool membership
         pool_name = pool_map.get(disk["name"])

@@ -131,6 +131,52 @@ async def delete_nfs_export(db: AsyncSession, export_id: int) -> None:
         raise HTTPException(status_code=404, detail=str(e))
 
 
+async def remove_shares_for_paths(paths: set[str]) -> None:
+    """Remove all SMB shares and NFS exports whose paths match or are under given paths."""
+    from ..database import async_session
+
+    # --- SMB ---
+    all_smb = smb_manager.read_shares()
+    remaining = []
+    removed_smb = []
+    for share in all_smb:
+        share_path = share.get("path", "")
+        if any(share_path == p or share_path.startswith(p + "/") for p in paths):
+            removed_smb.append(share["name"])
+        else:
+            remaining.append(share)
+
+    if removed_smb:
+        smb_manager.write_shares(remaining)
+        try:
+            await smb_manager.reload_samba()
+        except Exception as e:
+            logger.warning("Failed to reload Samba after removing shares: %s", e)
+        logger.info("Removed SMB shares for pool destroy: %s", removed_smb)
+
+    # --- NFS ---
+    async with async_session() as db:
+        from sqlalchemy import select
+        from .models import NFSExport
+
+        result = await db.execute(select(NFSExport))
+        all_nfs = list(result.scalars().all())
+        removed_nfs = []
+        for export in all_nfs:
+            if any(export.path == p or export.path.startswith(p + "/") for p in paths):
+                removed_nfs.append(export.id)
+                await db.delete(export)
+
+        if removed_nfs:
+            await db.commit()
+            await nfs_manager._sync_exports_file(db)
+            try:
+                await nfs_manager.reload_nfs()
+            except Exception as e:
+                logger.warning("Failed to reload NFS after removing exports: %s", e)
+            logger.info("Removed NFS exports (IDs %s) for pool destroy", removed_nfs)
+
+
 async def reload_nfs() -> dict:
     try:
         await nfs_manager.reload_nfs()

@@ -113,6 +113,38 @@ async def rollback_snapshot(dataset_path: str, snap_name: str) -> dict:
     return {"detail": f"Rolled back to {full_name}"}
 
 
+async def list_all_snapshots(dataset: str | None = None) -> list[dict]:
+    """List all snapshots across all pools, optionally filtered by dataset."""
+    args = ["list", "-t", "snapshot", "-Hp", "-o", "name,used,refer,creation"]
+    if dataset:
+        if not validate_dataset_path(dataset):
+            raise HTTPException(status_code=400, detail="Invalid dataset path")
+        args.extend(["-r", dataset])
+    result = await run_command("zfs", args)
+    if not result.success:
+        if "dataset does not exist" in result.stderr:
+            return []
+        raise HTTPException(status_code=500, detail=f"Failed to list snapshots: {result.stderr}")
+    if not result.stdout:
+        return []
+    return parse_snapshot_list(result.stdout)
+
+
+async def rename_snapshot(dataset_path: str, snap_name: str, new_name: str) -> dict:
+    if not validate_dataset_path(dataset_path):
+        raise HTTPException(status_code=400, detail="Invalid dataset path")
+    if not validate_snapshot_name(snap_name):
+        raise HTTPException(status_code=400, detail="Invalid snapshot name")
+    if not validate_snapshot_name(new_name):
+        raise HTTPException(status_code=400, detail="Invalid new snapshot name")
+    old_full = f"{dataset_path}@{snap_name}"
+    new_full = f"{dataset_path}@{new_name}"
+    result = await run_command("zfs", ["rename", old_full, new_full])
+    if not result.success:
+        raise HTTPException(status_code=400, detail=f"Failed to rename snapshot: {result.stderr}")
+    return {"detail": f"Renamed {old_full} to {new_full}"}
+
+
 async def clone_snapshot(dataset_path: str, snap_name: str, target: str) -> dict:
     if not validate_dataset_path(dataset_path):
         raise HTTPException(status_code=400, detail="Invalid dataset path")

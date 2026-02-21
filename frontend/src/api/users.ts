@@ -22,6 +22,11 @@ export async function updateGroups(username: string, groups: string[]): Promise<
   await client.patch(`/users/${username}/groups`, { groups });
 }
 
+export async function listGroups(): Promise<{ name: string; gid: number; members: string[] }[]> {
+  const res = await client.get<{ name: string; gid: number; members: string[] }[]>('/users/groups');
+  return res.data;
+}
+
 export async function setSmbPassword(username: string, password: string): Promise<void> {
   await client.post(`/users/${username}/smb-password`, { password });
 }

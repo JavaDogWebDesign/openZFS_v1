@@ -1,3 +1,5 @@
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
+import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
 import type { SystemUser, SMBShare } from '../../types';
 
 interface UserListProps {
@@ -6,9 +8,10 @@ interface UserListProps {
   onDelete: (username: string) => void;
   onSetSmbPassword: (username: string) => void;
   onAssignShares?: (username: string) => void;
+  onManageGroups?: (username: string) => void;
 }
 
-export default function UserList({ users, smbShares = [], onDelete, onSetSmbPassword, onAssignShares }: UserListProps) {
+export default function UserList({ users, smbShares = [], onDelete, onSetSmbPassword, onAssignShares, onManageGroups }: UserListProps) {
   if (users.length === 0) {
     return (
       <div className="rounded-lg border border-gray-200 bg-white p-8 text-center text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
@@ -64,26 +67,51 @@ export default function UserList({ users, smbShares = [], onDelete, onSetSmbPass
                   )}
                 </td>
                 <td className="px-4 py-3 text-right text-sm">
-                  {onAssignShares && (
-                    <button
-                      onClick={() => onAssignShares(user.username)}
-                      className="mr-2 rounded bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 hover:bg-purple-100 dark:bg-purple-900/50 dark:text-purple-400 dark:hover:bg-purple-900"
-                    >
-                      Assign Shares
-                    </button>
-                  )}
-                  <button
-                    onClick={() => onSetSmbPassword(user.username)}
-                    className="mr-2 rounded bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 dark:bg-blue-900/50 dark:text-blue-400 dark:hover:bg-blue-900"
-                  >
-                    SMB Pass
-                  </button>
-                  <button
-                    onClick={() => onDelete(user.username)}
-                    className="rounded bg-red-50 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100 dark:bg-red-900/50 dark:text-red-400 dark:hover:bg-red-900"
-                  >
-                    Delete
-                  </button>
+                  <Menu as="div" className="relative inline-block text-left">
+                    <MenuButton className="rounded p-1 hover:bg-gray-100 dark:hover:bg-gray-700">
+                      <EllipsisVerticalIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                    </MenuButton>
+                    <MenuItems className="absolute right-0 z-10 mt-1 w-44 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none dark:bg-gray-800 dark:ring-gray-700">
+                      <div className="py-1">
+                        {onManageGroups && (
+                          <MenuItem>
+                            <button
+                              onClick={() => onManageGroups(user.username)}
+                              className="block w-full px-4 py-2 text-left text-sm text-gray-700 data-[focus]:bg-gray-100 dark:text-gray-300 dark:data-[focus]:bg-gray-700"
+                            >
+                              Manage Groups
+                            </button>
+                          </MenuItem>
+                        )}
+                        {onAssignShares && (
+                          <MenuItem>
+                            <button
+                              onClick={() => onAssignShares(user.username)}
+                              className="block w-full px-4 py-2 text-left text-sm text-gray-700 data-[focus]:bg-gray-100 dark:text-gray-300 dark:data-[focus]:bg-gray-700"
+                            >
+                              Assign Shares
+                            </button>
+                          </MenuItem>
+                        )}
+                        <MenuItem>
+                          <button
+                            onClick={() => onSetSmbPassword(user.username)}
+                            className="block w-full px-4 py-2 text-left text-sm text-gray-700 data-[focus]:bg-gray-100 dark:text-gray-300 dark:data-[focus]:bg-gray-700"
+                          >
+                            Set SMB Password
+                          </button>
+                        </MenuItem>
+                        <MenuItem>
+                          <button
+                            onClick={() => onDelete(user.username)}
+                            className="block w-full px-4 py-2 text-left text-sm text-red-600 data-[focus]:bg-gray-100 dark:text-red-400 dark:data-[focus]:bg-gray-700"
+                          >
+                            Delete
+                          </button>
+                        </MenuItem>
+                      </div>
+                    </MenuItems>
+                  </Menu>
                 </td>
               </tr>
             );

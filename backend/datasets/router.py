@@ -7,6 +7,7 @@ from .schemas import (
     DatasetResponse,
     SnapshotCreate,
     SnapshotResponse,
+    SnapshotRename,
     CloneCreate,
 )
 from . import service
@@ -28,6 +29,14 @@ async def create_dataset(
     current_user: dict = Depends(get_current_user),
 ):
     return await service.create_dataset(dataset.name, dataset.properties)
+
+
+@router.get("/snapshots", response_model=list[SnapshotResponse])
+async def list_all_snapshots(
+    dataset: str | None = Query(None),
+    current_user: dict = Depends(get_current_user),
+):
+    return await service.list_all_snapshots(dataset)
 
 
 @router.patch("/{path:path}")
@@ -92,3 +101,13 @@ async def clone_snapshot(
     current_user: dict = Depends(get_current_user),
 ):
     return await service.clone_snapshot(path, snap, clone.target)
+
+
+@router.post("/{path:path}/snapshots/{snap}/rename")
+async def rename_snapshot(
+    path: str,
+    snap: str,
+    body: SnapshotRename,
+    current_user: dict = Depends(get_current_user),
+):
+    return await service.rename_snapshot(path, snap, body.new_name)

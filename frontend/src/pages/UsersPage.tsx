@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listUsers, createUser, deleteUser, setSmbPassword } from '../api/users';
+import { listUsers, createUser, deleteUser, setSmbPassword, listGroups, updateGroups } from '../api/users';
 import { listSMBShares, updateSMBShare } from '../api/shares';
 import UserList from '../components/users/UserList';
 import UserCreateForm from '../components/users/UserCreateForm';
 import ShareAssignmentDialog from '../components/users/ShareAssignmentDialog';
+import GroupManagementDialog from '../components/users/GroupManagementDialog';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import type { SMBShare } from '../types';
@@ -13,10 +14,12 @@ export default function UsersPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [assignSharesUser, setAssignSharesUser] = useState<string | null>(null);
+  const [manageGroupsUser, setManageGroupsUser] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const { data: users = [], isLoading } = useQuery({ queryKey: ['users'], queryFn: listUsers });
   const { data: smbShares = [] } = useQuery({ queryKey: ['smb-shares'], queryFn: listSMBShares });
+  const { data: systemGroups = [] } = useQuery({ queryKey: ['groups'], queryFn: listGroups });
 
   const [createError, setCreateError] = useState<string | null>(null);
 
@@ -46,6 +49,16 @@ export default function UsersPage() {
       setSmbPassword(username, password),
   });
 
+  const groupsMutation = useMutation({
+    mutationFn: ({ username, groups }: { username: string; groups: string[] }) =>
+      updateGroups(username, groups),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
+      setManageGroupsUser(null);
+    },
+  });
+
   const handleSetSmbPassword = (username: string) => {
     const password = prompt(`Set Samba password for ${username}:`);
     if (password) smbPassMutation.mutate({ username, password });
@@ -64,6 +77,8 @@ export default function UsersPage() {
   if (isLoading) {
     return <div className="flex justify-center p-8"><div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" /></div>;
   }
+
+  const manageGroupsUserData = users.find((u) => u.username === manageGroupsUser);
 
   return (
     <div className="space-y-4">
@@ -99,6 +114,7 @@ export default function UsersPage() {
         onDelete={(username) => setConfirmDelete(username)}
         onSetSmbPassword={handleSetSmbPassword}
         onAssignShares={(username) => setAssignSharesUser(username)}
+        onManageGroups={(username) => setManageGroupsUser(username)}
       />
 
       {assignSharesUser && (
@@ -108,6 +124,18 @@ export default function UsersPage() {
           smbShares={smbShares}
           onSave={handleSaveShareAssignment}
           onClose={() => setAssignSharesUser(null)}
+        />
+      )}
+
+      {manageGroupsUser && manageGroupsUserData && (
+        <GroupManagementDialog
+          open={!!manageGroupsUser}
+          username={manageGroupsUser}
+          currentGroups={manageGroupsUserData.groups}
+          availableGroups={systemGroups}
+          onSave={(username, groups) => groupsMutation.mutate({ username, groups })}
+          onClose={() => setManageGroupsUser(null)}
+          saving={groupsMutation.isPending}
         />
       )}
 

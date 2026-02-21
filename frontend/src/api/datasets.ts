@@ -39,3 +39,13 @@ export async function rollbackSnapshot(datasetPath: string, snapName: string): P
 export async function cloneSnapshot(datasetPath: string, snapName: string, target: string): Promise<void> {
   await client.post(`/datasets/${datasetPath}/snapshots/${snapName}/clone`, { target });
 }
+
+export async function listAllSnapshots(dataset?: string): Promise<Snapshot[]> {
+  const params = dataset ? { dataset } : {};
+  const res = await client.get<Snapshot[]>('/datasets/snapshots', { params });
+  return res.data;
+}
+
+export async function renameSnapshot(datasetPath: string, snapName: string, newName: string): Promise<void> {
+  await client.post(`/datasets/${datasetPath}/snapshots/${snapName}/rename`, { new_name: newName });
+}
