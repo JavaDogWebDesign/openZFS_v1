@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { listUsers } from '../../api/users';
+import { listDatasets } from '../../api/datasets';
 import type { SMBShare } from '../../types';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 
@@ -20,6 +21,8 @@ const PRESETS = [
 export default function SMBShareForm({ initialData, onSubmit, onCancel, isSubmitting }: SMBShareFormProps) {
   const isEdit = !!initialData;
   const { data: systemUsers = [] } = useQuery({ queryKey: ['users'], queryFn: listUsers });
+  const { data: datasets = [] } = useQuery({ queryKey: ['datasets'], queryFn: () => listDatasets() });
+  const mountpoints = datasets.filter((d) => d.mountpoint && d.mountpoint !== 'none' && d.mountpoint !== '-');
 
   const [name, setName] = useState(initialData?.name || '');
   const [path, setPath] = useState(initialData?.path || '');
@@ -100,7 +103,19 @@ export default function SMBShareForm({ initialData, onSubmit, onCancel, isSubmit
         </div>
         <div>
           <label className={labelClass}>Path</label>
-          <input value={path} onChange={(e) => setPath(e.target.value)} className={inputClass} placeholder="/mnt/pool/share" />
+          <select
+            value={mountpoints.some((d) => d.mountpoint === path) ? path : '__custom__'}
+            onChange={(e) => { if (e.target.value !== '__custom__') setPath(e.target.value); }}
+            className={inputClass}
+          >
+            <option value="__custom__">Custom path...</option>
+            {mountpoints.map((d) => (
+              <option key={d.name} value={d.mountpoint}>{d.mountpoint} ({d.name})</option>
+            ))}
+          </select>
+          {(!mountpoints.some((d) => d.mountpoint === path)) && (
+            <input value={path} onChange={(e) => setPath(e.target.value)} className={`${inputClass} mt-1`} placeholder="/mnt/pool/share" />
+          )}
           {pathError && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{pathError}</p>}
         </div>
       </div>

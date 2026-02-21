@@ -1,6 +1,8 @@
 import { useForm } from 'react-hook-form';
+import { useQuery } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { listDatasets } from '../../api/datasets';
 
 const schema = z.object({
   path: z.string().min(1).regex(/^\/[a-zA-Z0-9_.\-/]+$/, 'Must be an absolute path'),
@@ -28,6 +30,9 @@ export default function NFSExportForm({ onSubmit, onCancel, isSubmitting }: NFSE
     defaultValues: { client: '*', options: 'rw,sync,no_subtree_check' },
   });
 
+  const { data: datasets = [] } = useQuery({ queryKey: ['datasets'], queryFn: () => listDatasets() });
+  const mountpoints = datasets.filter((d) => d.mountpoint && d.mountpoint !== 'none' && d.mountpoint !== '-');
+  const currentPath = watch('path');
   const currentOptions = watch('options');
 
   return (
@@ -36,7 +41,19 @@ export default function NFSExportForm({ onSubmit, onCancel, isSubmitting }: NFSE
 
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Path</label>
-        <input {...register('path')} className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" placeholder="/mnt/pool/share" />
+        <select
+          value={mountpoints.some((d) => d.mountpoint === currentPath) ? currentPath : '__custom__'}
+          onChange={(e) => { if (e.target.value !== '__custom__') setValue('path', e.target.value); }}
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+        >
+          <option value="__custom__">Custom path...</option>
+          {mountpoints.map((d) => (
+            <option key={d.name} value={d.mountpoint}>{d.mountpoint} ({d.name})</option>
+          ))}
+        </select>
+        {(!mountpoints.some((d) => d.mountpoint === currentPath)) && (
+          <input {...register('path')} className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" placeholder="/mnt/pool/share" />
+        )}
         {errors.path && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.path.message}</p>}
       </div>
 
