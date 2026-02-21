@@ -1,9 +1,50 @@
 """Share service - business logic for SMB and NFS share management."""
 
+import grp
+import logging
+import os
+import stat
+
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..utils.command import run_command
 from . import smb_manager, nfs_manager
+
+logger = logging.getLogger(__name__)
+
+SMB_GROUP = "smbusers"
+
+
+async def _ensure_smb_group() -> int:
+    """Ensure the smbusers group exists, return its GID."""
+    try:
+        return grp.getgrnam(SMB_GROUP).gr_gid
+    except KeyError:
+        await run_command("groupadd", [SMB_GROUP])
+        return grp.getgrnam(SMB_GROUP).gr_gid
+
+
+async def _fix_share_permissions(share: dict) -> None:
+    """Set directory permissions and add users to smbusers group."""
+    path = share.get("path", "")
+    if not path or not os.path.isdir(path):
+        return
+
+    try:
+        gid = await _ensure_smb_group()
+
+        # Set directory to root:smbusers with setgid + group-writable (2775)
+        os.chown(path, 0, gid)
+        os.chmod(path, stat.S_IRWXU | stat.S_IRWXG | stat.S_ISGID | stat.S_IROTH | stat.S_IXOTH)
+
+        # Add all valid_users and write_list members to the smbusers group
+        all_users = set(share.get("valid_users", []) + share.get("write_list", []))
+        for username in all_users:
+            if username:
+                await run_command("usermod", ["-aG", SMB_GROUP, username])
+    except Exception as e:
+        logger.warning("Failed to fix share permissions for %s: %s", path, e)
 
 
 # --- SMB ---
@@ -18,14 +59,18 @@ async def list_smb_shares() -> list[dict]:
 async def create_smb_share(data: dict) -> dict:
     try:
         smb_manager.add_share(data)
-        return smb_manager.get_share(data["name"]) or data
+        share = smb_manager.get_share(data["name"]) or data
+        await _fix_share_permissions(share)
+        return share
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
 async def update_smb_share(name: str, updates: dict) -> dict:
     try:
-        return smb_manager.update_share(name, updates)
+        share = smb_manager.update_share(name, updates)
+        await _fix_share_permissions(share)
+        return share
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 

@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     systemctl_cmd: str = "/usr/bin/systemctl"
     lsblk_cmd: str = "/usr/bin/lsblk"
     smartctl_cmd: str = "/usr/sbin/smartctl"
+    groupadd_cmd: str = "/usr/sbin/groupadd"
 
     # Samba
     smb_include_file: str = "/etc/samba/openzfs-shares.conf"

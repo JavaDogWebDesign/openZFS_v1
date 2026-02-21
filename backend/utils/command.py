@@ -21,6 +21,7 @@ ALLOWED_COMMANDS: dict[str, str] = {
     "systemctl": settings.systemctl_cmd,
     "lsblk": settings.lsblk_cmd,
     "smartctl": settings.smartctl_cmd,
+    "groupadd": settings.groupadd_cmd,
 }
 
 
