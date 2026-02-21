@@ -8,6 +8,7 @@ import {
   ExclamationTriangleIcon,
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
+import DashboardCharts from '../components/metrics/DashboardCharts';
 
 export default function DashboardPage() {
   const { data: pools = [] } = useQuery({ queryKey: ['pools'], queryFn: listPools });
@@ -122,6 +123,8 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      <DashboardCharts />
     </div>
   );
 }

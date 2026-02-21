@@ -44,6 +44,11 @@ class Settings(BaseSettings):
     nfs_exports_dir: str = "/etc/exports.d"
     nfs_exports_file: str = "/etc/exports.d/openzfs.exports"
 
+    # Metrics
+    metrics_pool_interval: int = 60
+    metrics_system_interval: int = 30
+    metrics_retention_days: int = 7
+
     # Subprocess
     command_timeout: int = 30
 

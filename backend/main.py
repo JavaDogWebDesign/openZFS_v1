@@ -21,6 +21,8 @@ from .users.router import router as users_router
 from .shares.router import router as shares_router
 from .drives.router import router as drives_router
 from .websockets.router import router as ws_router
+from .metrics.router import router as metrics_router
+from .metrics.collector import pool_metrics_loop, system_metrics_loop, purge_loop
 
 logger = logging.getLogger(__name__)
 
@@ -101,9 +103,15 @@ async def lifespan(app: FastAPI):
     logger.info("Application startup complete")
     cleanup_task = asyncio.create_task(_session_cleanup_loop())
     scrub_task = asyncio.create_task(_scrub_scheduler_loop())
+    pool_metrics_task = asyncio.create_task(pool_metrics_loop())
+    system_metrics_task = asyncio.create_task(system_metrics_loop())
+    purge_metrics_task = asyncio.create_task(purge_loop())
     yield
     cleanup_task.cancel()
     scrub_task.cancel()
+    pool_metrics_task.cancel()
+    system_metrics_task.cancel()
+    purge_metrics_task.cancel()
 
 
 app = FastAPI(
@@ -148,6 +156,7 @@ app.include_router(users_router, prefix="/api/v1/users", tags=["users"])
 app.include_router(shares_router, prefix="/api/v1/shares", tags=["shares"])
 app.include_router(drives_router, prefix="/api/v1/drives", tags=["drives"])
 app.include_router(ws_router, prefix="/api/v1/ws", tags=["websocket"])
+app.include_router(metrics_router, prefix="/api/v1/metrics", tags=["metrics"])
 
 
 @app.get("/api/v1/health")

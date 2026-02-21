@@ -224,6 +224,24 @@ export interface ScrubScheduleCreateRequest {
   minute?: number;
 }
 
+// Metrics
+export interface MetricDataPoint {
+  timestamp: number;
+  value: number;
+}
+
+export interface MetricSeries {
+  metric_name: string;
+  tags: string | null;
+  data: MetricDataPoint[];
+}
+
+export interface MetricsQueryResponse {
+  series: MetricSeries[];
+}
+
+export type MetricTimeRange = '1m' | '5m' | '15m' | '30m' | '1h' | '24h' | '7d';
+
 // WebSocket
 export interface PoolStatusMessage {
   type: 'pool_status';
