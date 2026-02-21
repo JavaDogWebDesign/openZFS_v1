@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Integer, Real, String, Text, func
+from sqlalchemy import DateTime, Float, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..database import Base
@@ -11,8 +11,8 @@ class Session(Base):
 
     id: Mapped[str] = mapped_column(Text, primary_key=True)
     username: Mapped[str] = mapped_column(Text, nullable=False)
-    created_at: Mapped[float] = mapped_column(Real, nullable=False)
-    expires_at: Mapped[float] = mapped_column(Real, nullable=False)
+    created_at: Mapped[float] = mapped_column(Float, nullable=False)
+    expires_at: Mapped[float] = mapped_column(Float, nullable=False)
 
 
 class AuditLog(Base):
