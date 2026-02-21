@@ -152,9 +152,17 @@ npm install --silent
 npm run build --silent
 ok "Frontend built -> ${INSTALL_DIR}/frontend/dist/"
 
-# ── 7. Create data directory ────────────────────────────────────
+# ── 7. Create data directory + reset database ─────────────────
 
 mkdir -p "${INSTALL_DIR}/data"
+
+# Remove old database so the default admin user is re-created with a
+# valid bcrypt hash matching the current code.  The JWT secret also
+# changes on each install, so old sessions are invalid anyway.
+if [[ -f "${INSTALL_DIR}/data/openzfs.db" ]]; then
+    info "Removing old database (will be re-created on first start)..."
+    rm -f "${INSTALL_DIR}/data/openzfs.db"
+fi
 ok "Data directory ready: ${INSTALL_DIR}/data"
 
 # ── 8. Configure Samba include ──────────────────────────────────

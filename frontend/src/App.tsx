@@ -1,15 +1,17 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import AppLayout from './components/layout/AppLayout';
-import LoginPage from './pages/LoginPage';
-import DashboardPage from './pages/DashboardPage';
-import PoolsPage from './pages/PoolsPage';
-import PoolDetailPage from './pages/PoolDetailPage';
-import DatasetsPage from './pages/DatasetsPage';
-import UsersPage from './pages/UsersPage';
-import SharesPage from './pages/SharesPage';
+
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const PoolsPage = lazy(() => import('./pages/PoolsPage'));
+const PoolDetailPage = lazy(() => import('./pages/PoolDetailPage'));
+const DatasetsPage = lazy(() => import('./pages/DatasetsPage'));
+const UsersPage = lazy(() => import('./pages/UsersPage'));
+const SharesPage = lazy(() => import('./pages/SharesPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,28 +23,38 @@ const queryClient = new QueryClient({
   },
 });
 
+function PageLoader() {
+  return (
+    <div className="flex justify-center p-8">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route
-              element={
-                <ProtectedRoute>
-                  <AppLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="/" element={<DashboardPage />} />
-              <Route path="/pools" element={<PoolsPage />} />
-              <Route path="/pools/:name" element={<PoolDetailPage />} />
-              <Route path="/datasets" element={<DatasetsPage />} />
-              <Route path="/users" element={<UsersPage />} />
-              <Route path="/shares" element={<SharesPage />} />
-            </Route>
-          </Routes>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route
+                element={
+                  <ProtectedRoute>
+                    <AppLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="/" element={<DashboardPage />} />
+                <Route path="/pools" element={<PoolsPage />} />
+                <Route path="/pools/:name" element={<PoolDetailPage />} />
+                <Route path="/datasets" element={<DatasetsPage />} />
+                <Route path="/users" element={<UsersPage />} />
+                <Route path="/shares" element={<SharesPage />} />
+              </Route>
+            </Routes>
+          </Suspense>
         </BrowserRouter>
       </AuthProvider>
     </QueryClientProvider>
