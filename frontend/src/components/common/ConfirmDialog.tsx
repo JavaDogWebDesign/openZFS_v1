@@ -6,6 +6,7 @@ interface ConfirmDialogProps {
   title: string;
   message: string;
   confirmLabel?: string;
+  error?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -15,6 +16,7 @@ export default function ConfirmDialog({
   title,
   message,
   confirmLabel = 'Confirm',
+  error,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -30,6 +32,11 @@ export default function ConfirmDialog({
             <div>
               <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</DialogTitle>
               <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{message}</p>
+              {error && (
+                <div className="mt-3 rounded-md bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                  {error}
+                </div>
+              )}
             </div>
           </div>
           <div className="mt-6 flex justify-end gap-3">

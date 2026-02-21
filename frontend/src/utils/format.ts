@@ -33,3 +33,28 @@ export function formatPowerOnHours(hours: number): string {
   const days = Math.floor(remaining / 24);
   return `${years}y ${days}d`;
 }
+
+export function formatScrubSchedule(schedule: { frequency: string; day_of_week: number; day_of_month: number; hour: number; minute: number }): string {
+  const time = `${String(schedule.hour).padStart(2, '0')}:${String(schedule.minute).padStart(2, '0')}`;
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  switch (schedule.frequency) {
+    case 'daily':
+      return `Daily at ${time}`;
+    case 'weekly':
+      return `Weekly ${days[schedule.day_of_week] || 'Mon'} at ${time}`;
+    case 'monthly':
+      return `Monthly day ${schedule.day_of_month} at ${time}`;
+    default:
+      return `${schedule.frequency} at ${time}`;
+  }
+}
+
+export function formatRelativeTime(timestamp: number): string {
+  const now = Math.floor(Date.now() / 1000);
+  const diff = now - timestamp;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 2592000) return `${Math.floor(diff / 86400)}d ago`;
+  return `${Math.floor(diff / 2592000)}mo ago`;
+}

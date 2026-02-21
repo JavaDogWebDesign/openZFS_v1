@@ -71,7 +71,7 @@ async def create_snapshot(
     snapshot: SnapshotCreate,
     current_user: dict = Depends(get_current_user),
 ):
-    return await service.create_snapshot(path, snapshot.name)
+    return await service.create_snapshot(path, snapshot.name, snapshot.recursive)
 
 
 @router.delete("/{path:path}/snapshots/{snap}")

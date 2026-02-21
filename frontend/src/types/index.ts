@@ -72,6 +72,16 @@ export interface DiskPartition {
 }
 
 // Drives (with SMART)
+export interface SmartAttribute {
+  id: number;
+  name: string;
+  value: number;
+  worst: number;
+  thresh: number;
+  raw_value: string;
+  flags: string;
+}
+
 export interface SmartInfo {
   available: boolean;
   healthy: boolean | null;
@@ -79,6 +89,12 @@ export interface SmartInfo {
   power_on_hours: number | null;
   model_family: string | null;
   rotation_rate: number | null;
+  model: string | null;
+  firmware_version: string | null;
+  form_factor: string | null;
+  interface_speed: string | null;
+  serial_number: string | null;
+  ata_smart_attributes: SmartAttribute[] | null;
 }
 
 export interface DriveInfo {
@@ -87,7 +103,7 @@ export interface DriveInfo {
   size: number;
   model: string;
   serial: string;
-  type: 'HDD' | 'SSD' | 'NVMe';
+  type: 'HDD' | 'SSD' | 'NVMe' | 'Unknown';
   partitions: DiskPartition[];
   in_use: boolean;
   pool: string | null;

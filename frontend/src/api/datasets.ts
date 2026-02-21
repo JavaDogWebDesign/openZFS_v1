@@ -24,8 +24,8 @@ export async function listSnapshots(datasetPath: string): Promise<Snapshot[]> {
   return res.data;
 }
 
-export async function createSnapshot(datasetPath: string, name: string): Promise<void> {
-  await client.post(`/datasets/${datasetPath}/snapshots`, { name });
+export async function createSnapshot(datasetPath: string, name: string, recursive: boolean = false): Promise<void> {
+  await client.post(`/datasets/${datasetPath}/snapshots`, { name, recursive });
 }
 
 export async function destroySnapshot(datasetPath: string, snapName: string): Promise<void> {

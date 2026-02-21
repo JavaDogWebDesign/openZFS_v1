@@ -28,6 +28,12 @@ async def get_smart_info(device: str) -> dict[str, Any]:
         "power_on_hours": None,
         "model_family": None,
         "rotation_rate": None,
+        "model": None,
+        "firmware_version": None,
+        "form_factor": None,
+        "interface_speed": None,
+        "serial_number": None,
+        "ata_smart_attributes": None,
     }
 
     try:
@@ -50,6 +56,19 @@ async def get_smart_info(device: str) -> dict[str, Any]:
     # Model info
     info["model_family"] = data.get("model_family")
     info["rotation_rate"] = data.get("rotation_rate")
+    info["model"] = data.get("model_name")
+    info["firmware_version"] = data.get("firmware_version")
+    info["serial_number"] = data.get("serial_number")
+
+    form_factor = data.get("form_factor", {})
+    if isinstance(form_factor, dict):
+        info["form_factor"] = form_factor.get("name")
+
+    iface_speed = data.get("interface_speed", {})
+    if isinstance(iface_speed, dict):
+        max_speed = iface_speed.get("max", {})
+        if isinstance(max_speed, dict):
+            info["interface_speed"] = max_speed.get("string")
 
     # Temperature - try multiple locations
     temp = data.get("temperature", {})
@@ -79,20 +98,47 @@ async def get_smart_info(device: str) -> dict[str, Any]:
         if info["temperature"] is None and nvme_log.get("temperature") is not None:
             info["temperature"] = nvme_log["temperature"]
 
+    # ATA SMART attributes table
+    if ata_attrs:
+        info["ata_smart_attributes"] = [
+            {
+                "id": attr.get("id"),
+                "name": attr.get("name"),
+                "value": attr.get("value"),
+                "worst": attr.get("worst"),
+                "thresh": attr.get("thresh"),
+                "raw_value": attr.get("raw", {}).get("string", str(attr.get("raw", {}).get("value", ""))),
+                "flags": attr.get("flags", {}).get("string", ""),
+            }
+            for attr in ata_attrs
+        ]
+
     return info
 
 
 def _determine_drive_type(smart_info: dict[str, Any], device_name: str, rota: bool | None = None) -> str:
-    """Determine if drive is HDD, SSD, or NVMe."""
+    """Determine if drive is HDD, SSD, NVMe, or Unknown using multi-signal approach."""
+    # Signal 1: NVMe device name
     if device_name.startswith("nvme"):
         return "NVMe"
+
+    # Signal 2: SMART rotation_rate (most reliable when available)
     rotation = smart_info.get("rotation_rate")
     if rotation is not None:
         return "HDD" if rotation > 0 else "SSD"
-    # Fallback: use lsblk ROTA column (kernel-level rotational flag)
-    if rota is not None:
-        return "HDD" if rota else "SSD"
-    return "SSD"  # Default assumption for non-rotating media
+
+    # Signal 3: Model name heuristic
+    model = smart_info.get("model") or ""
+    model_family = smart_info.get("model_family") or ""
+    if "SSD" in model.upper() or "SSD" in model_family.upper():
+        return "SSD"
+
+    # Signal 4: ROTA - only trust ROTA=0 (SSD), ignore ROTA=1 (unreliable in passthrough)
+    if rota is not None and not rota:
+        return "SSD"
+
+    # Default: Unknown when we can't determine reliably
+    return "Unknown"
 
 
 async def _get_pool_membership() -> dict[str, str]:
@@ -138,7 +184,7 @@ async def list_drives() -> list[dict[str, Any]]:
     for disk, smart in zip(disks, smart_results):
         if isinstance(smart, Exception):
             logger.warning("SMART query failed for %s: %s", disk["name"], smart)
-            smart = {"available": False, "healthy": None, "temperature": None, "power_on_hours": None, "model_family": None, "rotation_rate": None}
+            smart = {"available": False, "healthy": None, "temperature": None, "power_on_hours": None, "model_family": None, "rotation_rate": None, "model": None, "firmware_version": None, "form_factor": None, "interface_speed": None, "serial_number": None, "ata_smart_attributes": None}
 
         drive_type = _determine_drive_type(smart, disk["name"], disk.get("rota"))
 

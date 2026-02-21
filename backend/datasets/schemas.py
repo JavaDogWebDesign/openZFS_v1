@@ -30,6 +30,7 @@ class DatasetResponse(BaseModel):
 
 class SnapshotCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=64)
+    recursive: bool = False
 
     @field_validator("name")
     @classmethod

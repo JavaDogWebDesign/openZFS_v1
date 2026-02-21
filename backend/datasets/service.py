@@ -78,13 +78,17 @@ async def list_snapshots(dataset_path: str) -> list[dict]:
     return parse_snapshot_list(result.stdout)
 
 
-async def create_snapshot(dataset_path: str, snap_name: str) -> dict:
+async def create_snapshot(dataset_path: str, snap_name: str, recursive: bool = False) -> dict:
     if not validate_dataset_path(dataset_path):
         raise HTTPException(status_code=400, detail="Invalid dataset path")
     if not validate_snapshot_name(snap_name):
         raise HTTPException(status_code=400, detail="Invalid snapshot name")
     full_name = f"{dataset_path}@{snap_name}"
-    result = await run_command("zfs", ["snapshot", full_name])
+    args = ["snapshot"]
+    if recursive:
+        args.append("-r")
+    args.append(full_name)
+    result = await run_command("zfs", args)
     if not result.success:
         raise HTTPException(status_code=400, detail=f"Failed to create snapshot: {result.stderr}")
     return {"full_name": full_name, "detail": "Snapshot created"}

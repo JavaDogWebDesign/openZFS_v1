@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listPools, createPool, destroyPool, scrubPool } from '../api/pools';
+import { listPools, createPool, destroyPool, scrubPool, cancelScrub, listScrubSchedules } from '../api/pools';
 import PoolList from '../components/pools/PoolList';
 import PoolWizard from '../components/pools/PoolWizard';
 import ConfirmDialog from '../components/common/ConfirmDialog';
@@ -13,6 +13,7 @@ export default function PoolsPage() {
   const queryClient = useQueryClient();
 
   const { data: pools = [], isLoading } = useQuery({ queryKey: ['pools'], queryFn: listPools });
+  const { data: scrubSchedules = [] } = useQuery({ queryKey: ['scrub-schedules'], queryFn: listScrubSchedules });
 
   const createMutation = useMutation({
     mutationFn: (data: PoolCreateRequest) => createPool(data),
@@ -31,6 +32,10 @@ export default function PoolsPage() {
   });
 
   const scrubMutation = useMutation({ mutationFn: scrubPool });
+
+  const cancelScrubMutation = useMutation({
+    mutationFn: cancelScrub,
+  });
 
   if (isLoading) {
     return <div className="flex justify-center p-8"><div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" /></div>;
@@ -60,7 +65,9 @@ export default function PoolsPage() {
 
       <PoolList
         pools={pools}
+        scrubSchedules={scrubSchedules}
         onScrub={(name) => scrubMutation.mutate(name)}
+        onCancelScrub={(name) => cancelScrubMutation.mutate(name)}
         onDestroy={(name) => setConfirmDestroy(name)}
       />
 

@@ -9,6 +9,12 @@ class SmartInfo(BaseModel):
     power_on_hours: int | None = None
     model_family: str | None = None
     rotation_rate: int | None = None  # 0 = SSD
+    model: str | None = None
+    firmware_version: str | None = None
+    form_factor: str | None = None
+    interface_speed: str | None = None
+    serial_number: str | None = None
+    ata_smart_attributes: list[dict] | None = None
 
 
 class DriveResponse(BaseModel):

@@ -30,6 +30,7 @@ export default function SnapshotsPage() {
   // Create snapshot form
   const [createDataset, setCreateDataset] = useState('');
   const [createName, setCreateName] = useState('');
+  const [createRecursive, setCreateRecursive] = useState(false);
 
   // Clone form
   const [cloneTarget, setCloneTarget] = useState('');
@@ -66,7 +67,8 @@ export default function SnapshotsPage() {
   };
 
   const createMutation = useMutation({
-    mutationFn: ({ dataset, name }: { dataset: string; name: string }) => createSnapshot(dataset, name),
+    mutationFn: ({ dataset, name, recursive }: { dataset: string; name: string; recursive: boolean }) =>
+      createSnapshot(dataset, name, recursive),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-snapshots'] });
       closeDialog();
@@ -112,34 +114,41 @@ export default function SnapshotsPage() {
     setSelectedSnap(null);
     setCreateDataset('');
     setCreateName('');
+    setCreateRecursive(false);
     setCloneTarget('');
     setRenameName('');
   };
 
   const openCreate = () => {
+    createMutation.reset();
     setCreateDataset(datasetFilter || allDatasetNames[0] || '');
     setCreateName('');
+    setCreateRecursive(false);
     setDialogMode('create');
   };
 
   const openClone = (dataset: string, name: string) => {
+    cloneMutation.reset();
     setSelectedSnap({ dataset, name });
     setCloneTarget('');
     setDialogMode('clone');
   };
 
   const openRename = (dataset: string, name: string) => {
+    renameMutation.reset();
     setSelectedSnap({ dataset, name });
     setRenameName(name);
     setDialogMode('rename');
   };
 
   const openRollback = (dataset: string, name: string) => {
+    rollbackMutation.reset();
     setSelectedSnap({ dataset, name });
     setDialogMode('rollback');
   };
 
   const openDestroy = (dataset: string, name: string) => {
+    destroyMutation.reset();
     setSelectedSnap({ dataset, name });
     setDialogMode('destroy');
   };
@@ -148,6 +157,15 @@ export default function SnapshotsPage() {
     const ts = parseInt(creation, 10);
     if (isNaN(ts)) return creation;
     return new Date(ts * 1000).toLocaleString();
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getErrorMessage = (error: any): string => {
+    if (!error) return '';
+    const detail = error?.response?.data?.detail;
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail)) return detail.map((d: { msg?: string }) => d.msg || JSON.stringify(d)).join('; ');
+    return error.message || 'An unexpected error occurred';
   };
 
   if (isLoading) {
@@ -279,6 +297,11 @@ export default function SnapshotsPage() {
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <DialogPanel className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
             <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">Create Snapshot</DialogTitle>
+            {createMutation.isError && (
+              <div className="mt-3 rounded-md bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                {getErrorMessage(createMutation.error)}
+              </div>
+            )}
             <div className="mt-4 space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Dataset</label>
@@ -301,12 +324,22 @@ export default function SnapshotsPage() {
                   placeholder="e.g. daily-backup"
                   className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                 />
+                <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">Allowed: letters, numbers, underscore, period, hyphen</p>
               </div>
+              <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                <input
+                  type="checkbox"
+                  checked={createRecursive}
+                  onChange={(e) => setCreateRecursive(e.target.checked)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+                />
+                Recursive (include child datasets)
+              </label>
             </div>
             <div className="mt-6 flex justify-end gap-3">
               <button onClick={closeDialog} className="rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">Cancel</button>
               <button
-                onClick={() => createMutation.mutate({ dataset: createDataset, name: createName })}
+                onClick={() => createMutation.mutate({ dataset: createDataset, name: createName, recursive: createRecursive })}
                 disabled={!createDataset || !createName || createMutation.isPending}
                 className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
               >
@@ -326,6 +359,11 @@ export default function SnapshotsPage() {
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               Clone {selectedSnap?.dataset}@{selectedSnap?.name}
             </p>
+            {cloneMutation.isError && (
+              <div className="mt-3 rounded-md bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                {getErrorMessage(cloneMutation.error)}
+              </div>
+            )}
             <div className="mt-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Target Path</label>
               <input
@@ -359,6 +397,11 @@ export default function SnapshotsPage() {
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               Rename {selectedSnap?.dataset}@{selectedSnap?.name}
             </p>
+            {renameMutation.isError && (
+              <div className="mt-3 rounded-md bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                {getErrorMessage(renameMutation.error)}
+              </div>
+            )}
             <div className="mt-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">New Name</label>
               <input
@@ -388,6 +431,7 @@ export default function SnapshotsPage() {
         title="Rollback Snapshot"
         message={`Are you sure you want to rollback to "${selectedSnap?.dataset}@${selectedSnap?.name}"? This will discard all changes made after this snapshot.`}
         confirmLabel="Rollback"
+        error={rollbackMutation.isError ? getErrorMessage(rollbackMutation.error) : undefined}
         onConfirm={() => selectedSnap && rollbackMutation.mutate({ dataset: selectedSnap.dataset, snap: selectedSnap.name })}
         onCancel={closeDialog}
       />
@@ -398,6 +442,7 @@ export default function SnapshotsPage() {
         title="Destroy Snapshot"
         message={`Are you sure you want to destroy "${selectedSnap?.dataset}@${selectedSnap?.name}"? This action cannot be undone.`}
         confirmLabel="Destroy"
+        error={destroyMutation.isError ? getErrorMessage(destroyMutation.error) : undefined}
         onConfirm={() => selectedSnap && destroyMutation.mutate({ dataset: selectedSnap.dataset, snap: selectedSnap.name })}
         onCancel={closeDialog}
       />
