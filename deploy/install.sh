@@ -78,14 +78,14 @@ PACKAGES=(
     python3                 # Python runtime
     python3-venv            # Python virtual environments
     python3-pip             # pip package manager
-    python3-dev             # Python headers (for bcrypt compilation)
+    python3-dev             # Python headers (for native extensions)
     build-essential         # gcc/make (for native Python extensions)
-    libffi-dev              # libffi (needed by cryptography/bcrypt)
+    libffi-dev              # libffi (needed by native extensions)
     nodejs                  # Node.js runtime
     npm                     # Node package manager
     nginx                   # Reverse proxy / static file server
     rsync                   # Used by this script to copy files
-    openssl                 # For generating JWT secret keys
+    openssl                 # General crypto utilities
     samba                   # SMB/CIFS file sharing
     nfs-kernel-server       # NFS file sharing
     smartmontools           # smartctl for drive health monitoring
@@ -152,17 +152,9 @@ npm install --silent
 npm run build --silent
 ok "Frontend built -> ${INSTALL_DIR}/frontend/dist/"
 
-# ── 7. Create data directory + reset database ─────────────────
+# ── 7. Create data directory ──────────────────────────────────
 
 mkdir -p "${INSTALL_DIR}/data"
-
-# Remove old database so the default admin user is re-created with a
-# valid bcrypt hash matching the current code.  The JWT secret also
-# changes on each install, so old sessions are invalid anyway.
-if [[ -f "${INSTALL_DIR}/data/openzfs.db" ]]; then
-    info "Removing old database (will be re-created on first start)..."
-    rm -f "${INSTALL_DIR}/data/openzfs.db"
-fi
 ok "Data directory ready: ${INSTALL_DIR}/data"
 
 # ── 8. Configure Samba include ──────────────────────────────────
@@ -191,21 +183,15 @@ mkdir -p /etc/exports.d
 touch /etc/exports.d/openzfs.exports
 ok "NFS exports directory configured"
 
-# ── 10. Generate JWT secret key ─────────────────────────────────
-
-SECRET_KEY=$(openssl rand -hex 32)
-info "Generated JWT secret key"
-
-# ── 11. Install systemd service ─────────────────────────────────
+# ── 10. Install systemd service ───────────────────────────────
 
 info "Installing systemd service..."
-sed "s/CHANGE_ME_GENERATE_WITH_openssl_rand_hex_32/${SECRET_KEY}/" \
-    "${DEPLOY_DIR}/openzfs.service" > "/etc/systemd/system/${SERVICE_NAME}.service"
+cp "${DEPLOY_DIR}/openzfs.service" "/etc/systemd/system/${SERVICE_NAME}.service"
 systemctl daemon-reload
 systemctl enable "${SERVICE_NAME}"
 ok "Systemd service installed and enabled"
 
-# ── 12. Install nginx config ────────────────────────────────────
+# ── 11. Install nginx config ────────────────────────────────────
 
 if [[ -d /etc/nginx/sites-available ]]; then
     info "Installing nginx reverse-proxy config..."
@@ -224,13 +210,13 @@ else
     warn "Nginx sites-available directory not found — skipping nginx config"
 fi
 
-# ── 13. Enable supporting services ──────────────────────────────
+# ── 12. Enable supporting services ──────────────────────────────
 
 info "Enabling supporting services..."
 systemctl enable --now smbd nmbd 2>/dev/null || warn "Could not enable Samba services"
 systemctl enable --now nfs-kernel-server 2>/dev/null || warn "Could not enable NFS server"
 
-# ── 14. Start the application ───────────────────────────────────
+# ── 13. Start the application ───────────────────────────────────
 
 info "Starting ${SERVICE_NAME}..."
 systemctl restart "${SERVICE_NAME}"
@@ -254,8 +240,7 @@ echo "  API Docs:   http://${IP_ADDR}/docs"
 echo "  Service:    systemctl status ${SERVICE_NAME}"
 echo "  Logs:       journalctl -u ${SERVICE_NAME} -f"
 echo ""
-echo "  Default login:  admin / admin"
-echo "  IMPORTANT: Change the default password immediately!"
+echo "  Login with any system account (PAM authentication)"
 echo ""
 echo "  For HTTPS, edit the nginx config:"
 echo "    vim /etc/nginx/sites-available/${SERVICE_NAME}"

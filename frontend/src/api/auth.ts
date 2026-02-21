@@ -1,18 +1,13 @@
 import client from './client';
-import type { LoginRequest, TokenResponse, AppUser } from '../types';
+import type { LoginRequest, LoginResponse, AppUser } from '../types';
 
-export async function login(data: LoginRequest): Promise<TokenResponse> {
-  const res = await client.post<TokenResponse>('/auth/login', data);
+export async function login(data: LoginRequest): Promise<LoginResponse> {
+  const res = await client.post<LoginResponse>('/auth/login', data);
   return res.data;
 }
 
-export async function refreshToken(refresh_token: string): Promise<TokenResponse> {
-  const res = await client.post<TokenResponse>('/auth/refresh', { refresh_token });
-  return res.data;
-}
-
-export async function logout(refresh_token: string): Promise<void> {
-  await client.post('/auth/logout', { refresh_token });
+export async function logout(): Promise<void> {
+  await client.post('/auth/logout');
 }
 
 export async function getMe(): Promise<AppUser> {

@@ -10,11 +10,6 @@ export default function Header() {
       <div className="flex items-center gap-4">
         <span className="text-sm text-gray-600">
           {user?.username}
-          {user?.is_admin && (
-            <span className="ml-2 rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
-              Admin
-            </span>
-          )}
         </span>
         <button
           onClick={logout}

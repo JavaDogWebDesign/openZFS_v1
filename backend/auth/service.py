@@ -1,78 +1,87 @@
-from datetime import datetime, timedelta, timezone
+import asyncio
+import logging
+import time
+import uuid
+from collections import defaultdict
 
-import bcrypt
-from jose import JWTError, jwt
-from sqlalchemy import select
+import pam
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import settings
-from .models import AppUser, RevokedToken
+from .models import Session
+
+logger = logging.getLogger(__name__)
+
+# In-memory rate limiter: username -> list of timestamps
+_login_attempts: dict[str, list[float]] = defaultdict(list)
+_RATE_LIMIT_MAX = 5
+_RATE_LIMIT_WINDOW = 300  # 5 minutes
 
 
-def hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+def check_rate_limit(username: str) -> bool:
+    """Return True if the request is allowed, False if rate-limited."""
+    now = time.time()
+    attempts = _login_attempts[username]
+    # Prune old entries
+    _login_attempts[username] = [t for t in attempts if now - t < _RATE_LIMIT_WINDOW]
+    if len(_login_attempts[username]) >= _RATE_LIMIT_MAX:
+        return False
+    _login_attempts[username].append(now)
+    return True
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
+async def authenticate_user(username: str, password: str) -> bool:
+    """Authenticate against PAM. Returns True on success."""
+    p = pam.pam()
+    result = await asyncio.to_thread(p.authenticate, username, password)
+    if result:
+        logger.info("PAM login successful: user '%s'", username)
+    else:
+        logger.warning("PAM login failed: user '%s' — %s", username, p.reason)
+    return result
 
 
-def create_token(data: dict, token_type: str, expires_delta: timedelta) -> str:
-    to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + expires_delta
-    to_encode.update({"exp": expire, "type": token_type})
-    return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
-
-
-def create_access_token(user_id: int) -> str:
-    return create_token(
-        {"sub": str(user_id)},
-        "access",
-        timedelta(minutes=settings.access_token_expire_minutes),
+async def create_session(db: AsyncSession, username: str) -> str:
+    """Create a new session row and return the session ID."""
+    session_id = str(uuid.uuid4())
+    now = time.time()
+    row = Session(
+        id=session_id,
+        username=username,
+        created_at=now,
+        expires_at=now + settings.session_lifetime,
     )
+    db.add(row)
+    await db.flush()
+    return session_id
 
 
-def create_refresh_token(user_id: int) -> str:
-    return create_token(
-        {"sub": str(user_id)},
-        "refresh",
-        timedelta(days=settings.refresh_token_expire_days),
-    )
-
-
-async def authenticate_user(db: AsyncSession, username: str, password: str) -> AppUser | None:
-    result = await db.execute(select(AppUser).where(AppUser.username == username))
-    user = result.scalar_one_or_none()
-    if user is None or not verify_password(password, user.hashed_password):
+async def get_session(db: AsyncSession, session_id: str) -> dict | None:
+    """Look up a session. Returns {"username": ...} or None if expired/missing."""
+    result = await db.execute(select(Session).where(Session.id == session_id))
+    row = result.scalar_one_or_none()
+    if row is None:
         return None
-    if not user.is_active:
+    if time.time() > row.expires_at:
+        await db.execute(delete(Session).where(Session.id == session_id))
+        await db.flush()
         return None
-    return user
+    return {"username": row.username}
 
 
-async def get_user_by_id(db: AsyncSession, user_id: int) -> AppUser | None:
-    result = await db.execute(select(AppUser).where(AppUser.id == user_id))
-    return result.scalar_one_or_none()
-
-
-async def revoke_token(db: AsyncSession, token: str) -> None:
-    db.add(RevokedToken(token=token))
+async def delete_session(db: AsyncSession, session_id: str) -> None:
+    """Delete a session (logout)."""
+    await db.execute(delete(Session).where(Session.id == session_id))
     await db.flush()
 
 
-async def is_token_revoked(db: AsyncSession, token: str) -> bool:
-    result = await db.execute(select(RevokedToken).where(RevokedToken.token == token))
-    return result.scalar_one_or_none() is not None
-
-
-async def create_default_admin(db: AsyncSession) -> None:
-    result = await db.execute(select(AppUser).limit(1))
-    if result.scalar_one_or_none() is None:
-        admin = AppUser(
-            username="admin",
-            hashed_password=hash_password("admin"),
-            is_admin=True,
-            is_active=True,
-        )
-        db.add(admin)
-        await db.flush()
+async def cleanup_expired_sessions(db: AsyncSession) -> int:
+    """Delete all expired sessions. Returns the number removed."""
+    now = time.time()
+    result = await db.execute(delete(Session).where(Session.expires_at < now))
+    await db.flush()
+    count = result.rowcount
+    if count:
+        logger.info("Cleaned up %d expired session(s)", count)
+    return count

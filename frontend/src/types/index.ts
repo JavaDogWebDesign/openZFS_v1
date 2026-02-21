@@ -4,18 +4,13 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface TokenResponse {
-  access_token: string;
-  refresh_token: string;
-  token_type: string;
+export interface LoginResponse {
+  username: string;
+  message: string;
 }
 
 export interface AppUser {
-  id: number;
   username: string;
-  is_admin: boolean;
-  is_active: boolean;
-  created_at: string;
 }
 
 // Pools

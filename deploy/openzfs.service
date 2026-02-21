@@ -8,7 +8,6 @@ Type=simple
 User=root
 Group=root
 WorkingDirectory=/opt/openzfs-manager
-Environment=OPENZFS_SECRET_KEY=CHANGE_ME_GENERATE_WITH_openssl_rand_hex_32
 Environment=OPENZFS_DATABASE_URL=sqlite+aiosqlite:////opt/openzfs-manager/data/openzfs.db
 Environment=OPENZFS_CORS_ORIGINS=[]
 ExecStart=/opt/openzfs-manager/venv/bin/uvicorn backend.main:app --host 127.0.0.1 --port 8000

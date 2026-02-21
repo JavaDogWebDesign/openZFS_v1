@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
@@ -21,14 +22,28 @@ logger = logging.getLogger(__name__)
 AUDITED_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 
 
+async def _session_cleanup_loop():
+    """Purge expired sessions every hour."""
+    from .auth.service import cleanup_expired_sessions
+
+    while True:
+        await asyncio.sleep(3600)
+        try:
+            async with async_session() as db:
+                await cleanup_expired_sessions(db)
+                await db.commit()
+        except Exception as e:
+            logger.warning("Session cleanup error: %s", e)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    logger.info("Database URL: %s", settings.database_url)
     await init_db()
-    from .auth.service import create_default_admin
-    async with async_session() as session:
-        await create_default_admin(session)
-        await session.commit()
+    logger.info("Application startup complete")
+    cleanup_task = asyncio.create_task(_session_cleanup_loop())
     yield
+    cleanup_task.cancel()
 
 
 app = FastAPI(

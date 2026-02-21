@@ -1,38 +1,41 @@
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
+from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .config import settings
 from .database import get_db
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+# Mutating HTTP methods that require CSRF protection
+_MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    request: Request,
     db: AsyncSession = Depends(get_db),
-):
-    from .auth.service import get_user_by_id, is_token_revoked
+) -> dict:
+    from .auth.service import get_session
 
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
-        user_id: str | None = payload.get("sub")
-        token_type: str | None = payload.get("type")
-        if user_id is None or token_type != "access":
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
+    session_id = request.cookies.get(settings.cookie_name)
+    if not session_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
 
-    if await is_token_revoked(db, token):
-        raise credentials_exception
-
-    user = await get_user_by_id(db, int(user_id))
+    user = await get_session(db, session_id)
     if user is None:
-        raise credentials_exception
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired or invalid",
+        )
+
+    # CSRF check: mutating requests must include X-Requested-With header
+    if request.method in _MUTATING_METHODS:
+        if request.headers.get("X-Requested-With") != "XMLHttpRequest":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Missing CSRF header",
+            )
+
+    # Stash session ID so logout can delete it
+    user["_session_id"] = session_id
     return user

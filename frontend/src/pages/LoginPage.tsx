@@ -18,8 +18,9 @@ export default function LoginPage() {
     try {
       await login(username, password);
       navigate('/');
-    } catch {
-      setError('Invalid username or password');
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail;
+      setError(detail || 'Invalid username or password');
     } finally {
       setLoading(false);
     }

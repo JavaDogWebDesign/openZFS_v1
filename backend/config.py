@@ -9,11 +9,9 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "sqlite+aiosqlite:///./openzfs.db"
 
-    # JWT
-    secret_key: str = "change-me-in-production-use-openssl-rand-hex-32"
-    algorithm: str = "HS256"
-    access_token_expire_minutes: int = 30
-    refresh_token_expire_days: int = 7
+    # Sessions
+    session_lifetime: int = 86400  # 24 hours
+    cookie_name: str = "zfs_session"
 
     # CORS
     cors_origins: list[str] = ["http://localhost:5173"]

@@ -16,39 +16,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      getMe()
-        .then(setUser)
-        .catch(() => {
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-        })
-        .finally(() => setIsLoading(false));
-    } else {
-      setIsLoading(false);
-    }
+    getMe()
+      .then(setUser)
+      .catch(() => {
+        // No valid session — stay logged out
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   const login = useCallback(async (username: string, password: string) => {
-    const tokens = await apiLogin({ username, password });
-    localStorage.setItem('access_token', tokens.access_token);
-    localStorage.setItem('refresh_token', tokens.refresh_token);
-    const me = await getMe();
-    setUser(me);
+    const resp = await apiLogin({ username, password });
+    setUser({ username: resp.username });
   }, []);
 
   const logout = useCallback(async () => {
-    const refreshToken = localStorage.getItem('refresh_token');
-    if (refreshToken) {
-      try {
-        await apiLogout(refreshToken);
-      } catch {
-        // ignore logout errors
-      }
+    try {
+      await apiLogout();
+    } catch {
+      // ignore logout errors
     }
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
     setUser(null);
   }, []);
 
