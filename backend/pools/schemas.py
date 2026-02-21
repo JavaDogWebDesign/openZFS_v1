@@ -57,6 +57,17 @@ class PoolDetailResponse(BaseModel):
     errors: str
 
 
+class PoolProperty(BaseModel):
+    property: str
+    value: str
+    source: str
+
+
+class PoolPropertiesResponse(BaseModel):
+    properties: list[PoolProperty]
+    features: list[PoolProperty]
+
+
 class DiskResponse(BaseModel):
     name: str
     path: str

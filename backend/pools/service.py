@@ -8,7 +8,7 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..utils.parsers import parse_zpool_list, parse_zpool_status, parse_lsblk
+from ..utils.parsers import parse_zpool_list, parse_zpool_status, parse_zpool_get, parse_lsblk
 from ..utils.validators import validate_pool_name
 from . import zfs_executor
 from .models import ScrubSchedule
@@ -111,6 +111,27 @@ async def import_pool(name: str) -> dict:
     if not result.success:
         raise HTTPException(status_code=400, detail=f"Failed to import pool: {result.stderr}")
     return {"detail": f"Pool {name} imported"}
+
+
+async def get_pool_properties(name: str) -> dict:
+    if not validate_pool_name(name):
+        raise HTTPException(status_code=400, detail="Invalid pool name")
+    result = await zfs_executor.zpool_get(name)
+    if not result.success:
+        raise HTTPException(status_code=404, detail=f"Pool not found: {result.stderr}")
+    all_props = parse_zpool_get(result.stdout)
+    properties = [p for p in all_props if not p["property"].startswith("feature@")]
+    features = [p for p in all_props if p["property"].startswith("feature@")]
+    return {"properties": properties, "features": features}
+
+
+async def trim_pool(name: str) -> dict:
+    if not validate_pool_name(name):
+        raise HTTPException(status_code=400, detail="Invalid pool name")
+    result = await zfs_executor.zpool_trim(name)
+    if not result.success:
+        raise HTTPException(status_code=400, detail=f"Failed to start trim: {result.stderr}")
+    return {"detail": f"Trim started on {name}"}
 
 
 async def get_disks() -> list[dict]:

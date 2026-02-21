@@ -1,5 +1,5 @@
 import client from './client';
-import type { Pool, PoolDetail, PoolCreateRequest, Disk, ScrubSchedule, ScrubScheduleCreateRequest } from '../types';
+import type { Pool, PoolDetail, PoolCreateRequest, PoolPropertiesResponse, Disk, ScrubSchedule, ScrubScheduleCreateRequest } from '../types';
 
 export async function listPools(): Promise<Pool[]> {
   const res = await client.get<Pool[]>('/pools');
@@ -34,6 +34,15 @@ export async function exportPool(name: string): Promise<void> {
 
 export async function importPool(name: string): Promise<void> {
   await client.post(`/pools/${name}/import`);
+}
+
+export async function trimPool(name: string): Promise<void> {
+  await client.post(`/pools/${name}/trim`);
+}
+
+export async function getPoolProperties(name: string): Promise<PoolPropertiesResponse> {
+  const res = await client.get<PoolPropertiesResponse>(`/pools/${name}/properties`);
+  return res.data;
 }
 
 export async function listDisks(): Promise<Disk[]> {

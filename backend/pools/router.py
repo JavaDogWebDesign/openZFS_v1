@@ -7,6 +7,7 @@ from .schemas import (
     PoolCreate,
     PoolResponse,
     PoolDetailResponse,
+    PoolPropertiesResponse,
     DiskResponse,
     ScrubScheduleCreate,
     ScrubScheduleUpdate,
@@ -72,6 +73,16 @@ async def cancel_scrub(name: str, current_user: dict = Depends(get_current_user)
 @router.post("/{name}/export")
 async def export_pool(name: str, current_user: dict = Depends(get_current_user)):
     return await service.export_pool(name)
+
+
+@router.get("/{name}/properties", response_model=PoolPropertiesResponse)
+async def get_pool_properties(name: str, current_user: dict = Depends(get_current_user)):
+    return await service.get_pool_properties(name)
+
+
+@router.post("/{name}/trim")
+async def trim_pool(name: str, current_user: dict = Depends(get_current_user)):
+    return await service.trim_pool(name)
 
 
 @router.post("/{name}/import")

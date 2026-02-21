@@ -136,6 +136,26 @@ def _parse_vdev_tree(lines: list[str]) -> list[dict[str, Any]]:
     return vdevs
 
 
+def parse_zpool_get(output: str) -> list[dict[str, Any]]:
+    """Parse `zpool get all <pool> -Hp` output.
+
+    Format: pool_name\tproperty\tvalue\tsource (tab-separated)
+    Returns list of dicts with property, value, source.
+    """
+    results = []
+    for line in output.strip().splitlines():
+        if not line.strip():
+            continue
+        parts = line.split("\t")
+        if len(parts) >= 4:
+            results.append({
+                "property": parts[1],
+                "value": parts[2],
+                "source": parts[3],
+            })
+    return results
+
+
 def parse_zfs_list(output: str) -> list[dict[str, Any]]:
     """Parse `zfs list -Hp -o name,used,avail,refer,mountpoint,type` output."""
     datasets = []

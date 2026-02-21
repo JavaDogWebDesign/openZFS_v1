@@ -66,6 +66,14 @@ async def zpool_import(name: str) -> CommandResult:
     return await run_command("zpool", ["import", name])
 
 
+async def zpool_get(pool_name: str) -> CommandResult:
+    return await run_command("zpool", ["get", "all", pool_name, "-Hp"])
+
+
+async def zpool_trim(pool_name: str) -> CommandResult:
+    return await run_command("zpool", ["trim", pool_name])
+
+
 async def zpool_iostat() -> CommandResult:
     return await run_command("zpool", ["iostat", "-Hp"])
 

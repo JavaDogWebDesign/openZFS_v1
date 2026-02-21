@@ -110,6 +110,18 @@ export interface DriveInfo {
   smart: SmartInfo;
 }
 
+// Pool Properties
+export interface PoolProperty {
+  property: string;
+  value: string;
+  source: string;
+}
+
+export interface PoolPropertiesResponse {
+  properties: PoolProperty[];
+  features: PoolProperty[];
+}
+
 // Datasets
 export interface Dataset {
   name: string;

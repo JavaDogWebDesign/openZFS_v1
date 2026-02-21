@@ -1,15 +1,13 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listPools, createPool, destroyPool, scrubPool, cancelScrub, listScrubSchedules } from '../api/pools';
+import { listPools, createPool, listScrubSchedules } from '../api/pools';
 import PoolList from '../components/pools/PoolList';
 import PoolWizard from '../components/pools/PoolWizard';
-import ConfirmDialog from '../components/common/ConfirmDialog';
 import type { PoolCreateRequest } from '../types';
 import { PlusIcon } from '@heroicons/react/24/outline';
 
 export default function PoolsPage() {
   const [showCreate, setShowCreate] = useState(false);
-  const [confirmDestroy, setConfirmDestroy] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const { data: pools = [], isLoading } = useQuery({ queryKey: ['pools'], queryFn: listPools });
@@ -21,20 +19,6 @@ export default function PoolsPage() {
       queryClient.invalidateQueries({ queryKey: ['pools'] });
       setShowCreate(false);
     },
-  });
-
-  const destroyMutation = useMutation({
-    mutationFn: destroyPool,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pools'] });
-      setConfirmDestroy(null);
-    },
-  });
-
-  const scrubMutation = useMutation({ mutationFn: scrubPool });
-
-  const cancelScrubMutation = useMutation({
-    mutationFn: cancelScrub,
   });
 
   if (isLoading) {
@@ -63,22 +47,7 @@ export default function PoolsPage() {
         />
       )}
 
-      <PoolList
-        pools={pools}
-        scrubSchedules={scrubSchedules}
-        onScrub={(name) => scrubMutation.mutate(name)}
-        onCancelScrub={(name) => cancelScrubMutation.mutate(name)}
-        onDestroy={(name) => setConfirmDestroy(name)}
-      />
-
-      <ConfirmDialog
-        open={confirmDestroy !== null}
-        title="Destroy Pool"
-        message={`Are you sure you want to destroy pool "${confirmDestroy}"? This will permanently delete all data.`}
-        confirmLabel="Destroy"
-        onConfirm={() => confirmDestroy && destroyMutation.mutate(confirmDestroy)}
-        onCancel={() => setConfirmDestroy(null)}
-      />
+      <PoolList pools={pools} scrubSchedules={scrubSchedules} />
     </div>
   );
 }
