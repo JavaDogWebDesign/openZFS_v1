@@ -16,6 +16,12 @@ const REFETCH_INTERVALS: Record<MetricTimeRange, number> = {
   '7d': 60_000,
 };
 
+function formatOps(v: number): string {
+  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+  if (v >= 1_000) return `${(v / 1_000).toFixed(1)}K`;
+  return String(Math.round(v));
+}
+
 export default function DashboardCharts() {
   const [range, setRange] = useState<MetricTimeRange>('1h');
   const refetch = REFETCH_INTERVALS[range];
@@ -26,9 +32,27 @@ export default function DashboardCharts() {
     refetchInterval: refetch,
   });
 
-  const { data: cpuMemData } = useQuery({
-    queryKey: ['metrics', 'cpumem', range],
-    queryFn: () => getMetrics(['system.cpu_percent', 'system.memory_percent'], range),
+  const { data: ioOpsData } = useQuery({
+    queryKey: ['metrics', 'io-ops', range],
+    queryFn: () => getMetrics(['pool.read_ops', 'pool.write_ops'], range),
+    refetchInterval: refetch,
+  });
+
+  const { data: ioBwData } = useQuery({
+    queryKey: ['metrics', 'io-bw', range],
+    queryFn: () => getMetrics(['pool.read_bw', 'pool.write_bw'], range),
+    refetchInterval: refetch,
+  });
+
+  const { data: cpuData } = useQuery({
+    queryKey: ['metrics', 'cpu', range],
+    queryFn: () => getMetrics(['system.cpu_percent'], range),
+    refetchInterval: refetch,
+  });
+
+  const { data: memData } = useQuery({
+    queryKey: ['metrics', 'memory', range],
+    queryFn: () => getMetrics(['system.memory_percent'], range),
     refetchInterval: refetch,
   });
 
@@ -59,8 +83,29 @@ export default function DashboardCharts() {
           tooltipFormatter={(v) => formatBytes(v)}
         />
         <MetricChart
-          title="CPU & Memory"
-          series={cpuMemData?.series ?? []}
+          title="Pool I/O Operations"
+          series={ioOpsData?.series ?? []}
+          range={range}
+          yAxisFormatter={(v) => `${formatOps(v)}/s`}
+          tooltipFormatter={(v) => `${formatOps(v)} ops/s`}
+        />
+        <MetricChart
+          title="Pool I/O Bandwidth"
+          series={ioBwData?.series ?? []}
+          range={range}
+          yAxisFormatter={(v) => `${formatBytes(v, 1)}/s`}
+          tooltipFormatter={(v) => `${formatBytes(v)}/s`}
+        />
+        <MetricChart
+          title="CPU Usage"
+          series={cpuData?.series ?? []}
+          range={range}
+          yAxisFormatter={(v) => `${v}%`}
+          tooltipFormatter={(v) => `${v.toFixed(1)}%`}
+        />
+        <MetricChart
+          title="Memory Usage"
+          series={memData?.series ?? []}
           range={range}
           yAxisFormatter={(v) => `${v}%`}
           tooltipFormatter={(v) => `${v.toFixed(1)}%`}

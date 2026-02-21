@@ -27,6 +27,27 @@ def parse_zpool_list(output: str) -> list[dict[str, Any]]:
     return pools
 
 
+def parse_zpool_iostat(output: str) -> list[dict[str, Any]]:
+    """Parse `zpool iostat -Hp` output into list of per-pool I/O dicts.
+
+    Columns: name  alloc  free  read_ops  write_ops  read_bw  write_bw
+    """
+    results = []
+    for line in output.strip().splitlines():
+        if not line.strip():
+            continue
+        parts = line.split("\t")
+        if len(parts) >= 7:
+            results.append({
+                "name": parts[0],
+                "read_ops": int(parts[3]) if parts[3] != "-" else 0,
+                "write_ops": int(parts[4]) if parts[4] != "-" else 0,
+                "read_bw": int(parts[5]) if parts[5] != "-" else 0,
+                "write_bw": int(parts[6]) if parts[6] != "-" else 0,
+            })
+    return results
+
+
 def parse_zpool_status(output: str) -> dict[str, Any]:
     """Parse `zpool status <pool>` output into structured dict."""
     result: dict[str, Any] = {

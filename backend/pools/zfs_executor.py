@@ -66,5 +66,9 @@ async def zpool_import(name: str) -> CommandResult:
     return await run_command("zpool", ["import", name])
 
 
+async def zpool_iostat() -> CommandResult:
+    return await run_command("zpool", ["iostat", "-Hp"])
+
+
 async def list_disks() -> CommandResult:
     return await run_command("lsblk", ["-Jb", "--output", "NAME,SIZE,TYPE,MODEL,SERIAL,MOUNTPOINT,FSTYPE"])

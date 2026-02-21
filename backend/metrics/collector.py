@@ -8,7 +8,7 @@ import time
 from ..config import settings
 from ..database import async_session
 from ..pools import zfs_executor
-from ..utils.parsers import parse_zpool_list
+from ..utils.parsers import parse_zpool_list, parse_zpool_iostat
 from .models import Metric
 
 logger = logging.getLogger(__name__)
@@ -135,6 +135,20 @@ async def _pool_metrics_loop() -> None:
                     except (ValueError, TypeError):
                         pass
                     db.add_all(rows)
+
+                # Pool I/O metrics from zpool iostat
+                iostat_result = await zfs_executor.zpool_iostat()
+                if iostat_result.returncode == 0:
+                    iostats = parse_zpool_iostat(iostat_result.stdout)
+                    for io in iostats:
+                        name = io["name"]
+                        db.add_all([
+                            Metric(timestamp=now, metric_name="pool.read_ops", metric_value=float(io["read_ops"]), tags=name),
+                            Metric(timestamp=now, metric_name="pool.write_ops", metric_value=float(io["write_ops"]), tags=name),
+                            Metric(timestamp=now, metric_name="pool.read_bw", metric_value=float(io["read_bw"]), tags=name),
+                            Metric(timestamp=now, metric_name="pool.write_bw", metric_value=float(io["write_bw"]), tags=name),
+                        ])
+
                 await db.commit()
             logger.debug("Collected pool metrics for %d pools", len(pools))
         except Exception as e:
