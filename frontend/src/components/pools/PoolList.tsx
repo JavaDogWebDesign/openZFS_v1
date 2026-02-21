@@ -77,7 +77,7 @@ export default function PoolList({ pools, scrubSchedules, onScrub, onCancelScrub
                     <MenuButton className="rounded p-1 hover:bg-gray-100 dark:hover:bg-gray-700">
                       <EllipsisVerticalIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                     </MenuButton>
-                    <MenuItems className="absolute right-0 z-10 mt-1 w-40 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none dark:bg-gray-800 dark:ring-gray-700">
+                    <MenuItems portal anchor="bottom end" className="z-50 w-40 rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none dark:bg-gray-800 dark:ring-gray-700">
                       <div className="py-1">
                         <MenuItem>
                           <button
