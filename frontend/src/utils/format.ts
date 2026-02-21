@@ -13,14 +13,23 @@ export function formatDate(dateString: string): string {
 export function healthColor(health: string): string {
   switch (health.toUpperCase()) {
     case 'ONLINE':
-      return 'text-green-600 bg-green-50';
+      return 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/50';
     case 'DEGRADED':
-      return 'text-yellow-600 bg-yellow-50';
+      return 'text-yellow-600 bg-yellow-50 dark:text-yellow-400 dark:bg-yellow-900/50';
     case 'FAULTED':
-      return 'text-red-600 bg-red-50';
+      return 'text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/50';
     case 'OFFLINE':
-      return 'text-gray-600 bg-gray-100';
+      return 'text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-700';
     default:
-      return 'text-gray-600 bg-gray-100';
+      return 'text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-700';
   }
+}
+
+export function formatPowerOnHours(hours: number): string {
+  if (hours < 24) return `${hours}h`;
+  if (hours < 8760) return `${Math.floor(hours / 24)}d ${hours % 24}h`;
+  const years = Math.floor(hours / 8760);
+  const remaining = hours % 8760;
+  const days = Math.floor(remaining / 24);
+  return `${years}y ${days}d`;
 }

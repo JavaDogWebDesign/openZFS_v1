@@ -54,6 +54,14 @@ async def reload_smb(current_user: dict = Depends(get_current_user)):
     return await service.reload_smb()
 
 
+@router.get("/smb/user/{username}", response_model=list[SMBShareResponse])
+async def get_user_shares(
+    username: str,
+    current_user: dict = Depends(get_current_user),
+):
+    return await service.get_user_shares(username)
+
+
 # --- NFS ---
 
 @router.get("/nfs", response_model=list[NFSExportResponse])

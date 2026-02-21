@@ -7,16 +7,36 @@ async def zpool_list() -> CommandResult:
     return await run_command("zpool", ["list", "-Hp"])
 
 
-async def zpool_status(pool_name: str) -> CommandResult:
-    return await run_command("zpool", ["status", pool_name])
+async def zpool_status(pool_name: str | None = None) -> CommandResult:
+    args = ["status"]
+    if pool_name:
+        args.append(pool_name)
+    return await run_command("zpool", args)
 
 
 async def zpool_create(
-    name: str, vdev_type: str, disks: list[str], properties: dict[str, str]
+    name: str,
+    vdev_type: str,
+    disks: list[str],
+    properties: dict[str, str],
+    fs_properties: dict[str, str] | None = None,
+    force: bool = False,
+    mountpoint: str | None = None,
 ) -> CommandResult:
     args = ["create"]
+
+    if force:
+        args.append("-f")
+
     for key, value in properties.items():
         args.extend(["-o", f"{key}={value}"])
+
+    if fs_properties:
+        for key, value in fs_properties.items():
+            args.extend(["-O", f"{key}={value}"])
+
+    if mountpoint:
+        args.extend(["-m", mountpoint])
 
     args.append(name)
     if vdev_type != "stripe":

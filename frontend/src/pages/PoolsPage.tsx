@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listPools, createPool, destroyPool, scrubPool, listDisks } from '../api/pools';
+import { listPools, createPool, destroyPool, scrubPool } from '../api/pools';
 import PoolList from '../components/pools/PoolList';
-import PoolCreateForm from '../components/pools/PoolCreateForm';
+import PoolWizard from '../components/pools/PoolWizard';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import type { PoolCreateRequest } from '../types';
 import { PlusIcon } from '@heroicons/react/24/outline';
@@ -13,7 +13,6 @@ export default function PoolsPage() {
   const queryClient = useQueryClient();
 
   const { data: pools = [], isLoading } = useQuery({ queryKey: ['pools'], queryFn: listPools });
-  const { data: disks = [] } = useQuery({ queryKey: ['disks'], queryFn: listDisks, enabled: showCreate });
 
   const createMutation = useMutation({
     mutationFn: (data: PoolCreateRequest) => createPool(data),
@@ -40,7 +39,7 @@ export default function PoolsPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900">ZFS Pools</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">ZFS Pools</h2>
         <button
           onClick={() => setShowCreate(!showCreate)}
           className="flex items-center gap-1 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
@@ -51,11 +50,11 @@ export default function PoolsPage() {
       </div>
 
       {showCreate && (
-        <PoolCreateForm
-          disks={disks}
+        <PoolWizard
           onSubmit={(data) => createMutation.mutate(data)}
           onCancel={() => setShowCreate(false)}
           isSubmitting={createMutation.isPending}
+          error={createMutation.error?.message}
         />
       )}
 

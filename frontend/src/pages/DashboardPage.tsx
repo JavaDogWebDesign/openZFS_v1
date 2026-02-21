@@ -23,42 +23,44 @@ export default function DashboardPage() {
       label: 'Total Pools',
       value: pools.length,
       icon: CircleStackIcon,
-      color: 'text-blue-600 bg-blue-50',
+      color: 'text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/50',
     },
     {
       label: 'Total Datasets',
       value: datasets.length,
       icon: FolderIcon,
-      color: 'text-purple-600 bg-purple-50',
+      color: 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/50',
     },
     {
       label: 'Healthy',
       value: healthyPools,
       icon: CheckCircleIcon,
-      color: 'text-green-600 bg-green-50',
+      color: 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/50',
     },
     {
       label: 'Degraded/Faulted',
       value: unhealthyPools,
       icon: ExclamationTriangleIcon,
-      color: unhealthyPools > 0 ? 'text-red-600 bg-red-50' : 'text-gray-600 bg-gray-50',
+      color: unhealthyPools > 0
+        ? 'text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/50'
+        : 'text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-700',
     },
   ];
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-gray-900">Dashboard</h2>
+      <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Dashboard</h2>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <div key={stat.label} className="rounded-lg border border-gray-200 bg-white p-5">
+          <div key={stat.label} className="rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
             <div className="flex items-center gap-3">
               <div className={`rounded-lg p-2 ${stat.color}`}>
                 <stat.icon className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">{stat.label}</p>
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{stat.label}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stat.value}</p>
               </div>
             </div>
           </div>
@@ -66,30 +68,30 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-lg border border-gray-200 bg-white p-5">
-          <h3 className="mb-3 font-semibold text-gray-900">Storage Overview</h3>
+        <div className="rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+          <h3 className="mb-3 font-semibold text-gray-900 dark:text-gray-100">Storage Overview</h3>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Total Capacity</span>
-              <span className="font-medium">{formatBytes(totalSize)}</span>
+              <span className="text-gray-500 dark:text-gray-400">Total Capacity</span>
+              <span className="font-medium dark:text-gray-200">{formatBytes(totalSize)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Used</span>
-              <span className="font-medium">{formatBytes(totalUsed)}</span>
+              <span className="text-gray-500 dark:text-gray-400">Used</span>
+              <span className="font-medium dark:text-gray-200">{formatBytes(totalUsed)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Free</span>
-              <span className="font-medium">{formatBytes(totalSize - totalUsed)}</span>
+              <span className="text-gray-500 dark:text-gray-400">Free</span>
+              <span className="font-medium dark:text-gray-200">{formatBytes(totalSize - totalUsed)}</span>
             </div>
             {totalSize > 0 && (
               <div className="pt-2">
-                <div className="h-3 w-full overflow-hidden rounded-full bg-gray-200">
+                <div className="h-3 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                   <div
                     className="h-full rounded-full bg-blue-600 transition-all"
                     style={{ width: `${(totalUsed / totalSize) * 100}%` }}
                   />
                 </div>
-                <p className="mt-1 text-right text-xs text-gray-500">
+                <p className="mt-1 text-right text-xs text-gray-500 dark:text-gray-400">
                   {((totalUsed / totalSize) * 100).toFixed(1)}% used
                 </p>
               </div>
@@ -97,17 +99,17 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-gray-200 bg-white p-5">
-          <h3 className="mb-3 font-semibold text-gray-900">Pool Health</h3>
+        <div className="rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+          <h3 className="mb-3 font-semibold text-gray-900 dark:text-gray-100">Pool Health</h3>
           {pools.length === 0 ? (
-            <p className="text-sm text-gray-500">No pools configured</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">No pools configured</p>
           ) : (
             <div className="space-y-2">
               {pools.map((pool) => (
-                <div key={pool.name} className="flex items-center justify-between rounded-md border border-gray-100 p-3">
+                <div key={pool.name} className="flex items-center justify-between rounded-md border border-gray-100 p-3 dark:border-gray-700">
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{pool.name}</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{pool.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       {formatBytes(pool.allocated)} / {formatBytes(pool.size)}
                     </p>
                   </div>

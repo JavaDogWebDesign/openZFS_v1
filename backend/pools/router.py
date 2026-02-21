@@ -1,7 +1,17 @@
 from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..database import get_db
 from ..dependencies import get_current_user
-from .schemas import PoolCreate, PoolResponse, PoolDetailResponse, DiskResponse
+from .schemas import (
+    PoolCreate,
+    PoolResponse,
+    PoolDetailResponse,
+    DiskResponse,
+    ScrubScheduleCreate,
+    ScrubScheduleUpdate,
+    ScrubScheduleResponse,
+)
 from . import service
 
 router = APIRouter()
@@ -17,6 +27,14 @@ async def list_disks(current_user: dict = Depends(get_current_user)):
     return await service.get_disks()
 
 
+@router.get("/schedules/scrub", response_model=list[ScrubScheduleResponse])
+async def list_scrub_schedules(
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    return await service.list_scrub_schedules(db)
+
+
 @router.get("/{name}", response_model=PoolDetailResponse)
 async def get_pool(name: str, current_user: dict = Depends(get_current_user)):
     return await service.get_pool_detail(name)
@@ -24,7 +42,15 @@ async def get_pool(name: str, current_user: dict = Depends(get_current_user)):
 
 @router.post("", response_model=PoolDetailResponse)
 async def create_pool(pool: PoolCreate, current_user: dict = Depends(get_current_user)):
-    return await service.create_pool(pool.name, pool.vdev_type, pool.disks, pool.properties)
+    return await service.create_pool(
+        pool.name,
+        pool.vdev_type,
+        pool.disks,
+        pool.properties,
+        fs_properties=pool.fs_properties,
+        force=pool.force,
+        mountpoint=pool.mountpoint,
+    )
 
 
 @router.delete("/{name}")
@@ -51,3 +77,35 @@ async def export_pool(name: str, current_user: dict = Depends(get_current_user))
 @router.post("/{name}/import")
 async def import_pool(name: str, current_user: dict = Depends(get_current_user)):
     return await service.import_pool(name)
+
+
+# --- Scrub Schedule endpoints ---
+
+@router.post("/{name}/schedule/scrub", response_model=ScrubScheduleResponse)
+async def create_scrub_schedule(
+    name: str,
+    schedule: ScrubScheduleCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    return await service.create_scrub_schedule(db, name, schedule.model_dump())
+
+
+@router.patch("/{name}/schedule/scrub", response_model=ScrubScheduleResponse)
+async def update_scrub_schedule(
+    name: str,
+    update: ScrubScheduleUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    return await service.update_scrub_schedule(db, name, update.model_dump(exclude_none=True))
+
+
+@router.delete("/{name}/schedule/scrub")
+async def delete_scrub_schedule(
+    name: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    await service.delete_scrub_schedule(db, name)
+    return {"detail": f"Scrub schedule for {name} deleted"}

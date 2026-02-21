@@ -25,6 +25,11 @@ export async function reloadSMB(): Promise<void> {
   await client.post('/shares/smb/reload');
 }
 
+export async function getUserShares(username: string): Promise<SMBShare[]> {
+  const res = await client.get<SMBShare[]>(`/shares/smb/user/${username}`);
+  return res.data;
+}
+
 // NFS
 export async function listNFSExports(): Promise<NFSExport[]> {
   const res = await client.get<NFSExport[]>('/shares/nfs');

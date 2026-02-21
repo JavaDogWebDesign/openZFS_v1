@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     exportfs_cmd: str = "/usr/sbin/exportfs"
     systemctl_cmd: str = "/usr/bin/systemctl"
     lsblk_cmd: str = "/usr/bin/lsblk"
+    smartctl_cmd: str = "/usr/sbin/smartctl"
 
     # Samba
     smb_include_file: str = "/etc/samba/openzfs-shares.conf"

@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import AppLayout from './components/layout/AppLayout';
 
@@ -10,6 +11,7 @@ const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const PoolsPage = lazy(() => import('./pages/PoolsPage'));
 const PoolDetailPage = lazy(() => import('./pages/PoolDetailPage'));
 const DatasetsPage = lazy(() => import('./pages/DatasetsPage'));
+const DrivesPage = lazy(() => import('./pages/DrivesPage'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
 const SharesPage = lazy(() => import('./pages/SharesPage'));
 
@@ -35,27 +37,30 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <BrowserRouter>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route
-                element={
-                  <ProtectedRoute>
-                    <AppLayout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route path="/" element={<DashboardPage />} />
-                <Route path="/pools" element={<PoolsPage />} />
-                <Route path="/pools/:name" element={<PoolDetailPage />} />
-                <Route path="/datasets" element={<DatasetsPage />} />
-                <Route path="/users" element={<UsersPage />} />
-                <Route path="/shares" element={<SharesPage />} />
-              </Route>
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
+        <ThemeProvider>
+          <BrowserRouter>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route
+                  element={
+                    <ProtectedRoute>
+                      <AppLayout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route path="/" element={<DashboardPage />} />
+                  <Route path="/pools" element={<PoolsPage />} />
+                  <Route path="/pools/:name" element={<PoolDetailPage />} />
+                  <Route path="/datasets" element={<DatasetsPage />} />
+                  <Route path="/drives" element={<DrivesPage />} />
+                  <Route path="/users" element={<UsersPage />} />
+                  <Route path="/shares" element={<SharesPage />} />
+                </Route>
+              </Routes>
+            </Suspense>
+          </BrowserRouter>
+        </ThemeProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

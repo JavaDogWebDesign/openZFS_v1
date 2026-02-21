@@ -11,6 +11,13 @@ class SMBShareCreate(BaseModel):
     read_only: bool = Field(default=False)
     guest_ok: bool = Field(default=False)
     valid_users: list[str] = Field(default_factory=list)
+    write_list: list[str] = Field(default_factory=list)
+    create_mask: str = Field(default="")
+    directory_mask: str = Field(default="")
+    force_user: str = Field(default="")
+    force_group: str = Field(default="")
+    inherit_permissions: bool = Field(default=False)
+    vfs_objects: list[str] = Field(default_factory=list)
 
     @field_validator("name")
     @classmethod
@@ -33,6 +40,13 @@ class SMBShareUpdate(BaseModel):
     read_only: bool | None = None
     guest_ok: bool | None = None
     valid_users: list[str] | None = None
+    write_list: list[str] | None = None
+    create_mask: str | None = None
+    directory_mask: str | None = None
+    force_user: str | None = None
+    force_group: str | None = None
+    inherit_permissions: bool | None = None
+    vfs_objects: list[str] | None = None
 
 
 class SMBShareResponse(BaseModel):
@@ -43,6 +57,13 @@ class SMBShareResponse(BaseModel):
     read_only: bool
     guest_ok: bool
     valid_users: list[str]
+    write_list: list[str] = []
+    create_mask: str = ""
+    directory_mask: str = ""
+    force_user: str = ""
+    force_group: str = ""
+    inherit_permissions: bool = False
+    vfs_objects: list[str] = []
 
 
 class NFSExportCreate(BaseModel):

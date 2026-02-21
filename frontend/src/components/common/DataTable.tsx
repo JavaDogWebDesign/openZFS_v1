@@ -14,32 +14,32 @@ interface DataTableProps<T> {
 export default function DataTable<T>({ columns, data, keyField, emptyMessage = 'No data' }: DataTableProps<T>) {
   if (data.length === 0) {
     return (
-      <div className="rounded-lg border border-gray-200 bg-white p-8 text-center text-gray-500">
+      <div className="rounded-lg border border-gray-200 bg-white p-8 text-center text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
         {emptyMessage}
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead className="bg-gray-50 dark:bg-gray-900">
           <tr>
             {columns.map((col) => (
               <th
                 key={col.key}
-                className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+                className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400"
               >
                 {col.header}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200">
+        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
           {data.map((item) => (
-            <tr key={String(item[keyField])} className="hover:bg-gray-50">
+            <tr key={String(item[keyField])} className="hover:bg-gray-50 dark:hover:bg-gray-700">
               {columns.map((col) => (
-                <td key={col.key} className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                <td key={col.key} className="whitespace-nowrap px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
                   {col.render ? col.render(item) : String((item as Record<string, unknown>)[col.key] ?? '')}
                 </td>
               ))}

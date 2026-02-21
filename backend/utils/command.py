@@ -20,6 +20,7 @@ ALLOWED_COMMANDS: dict[str, str] = {
     "exportfs": settings.exportfs_cmd,
     "systemctl": settings.systemctl_cmd,
     "lsblk": settings.lsblk_cmd,
+    "smartctl": settings.smartctl_cmd,
 }
 
 

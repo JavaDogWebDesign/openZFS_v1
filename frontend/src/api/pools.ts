@@ -1,5 +1,5 @@
 import client from './client';
-import type { Pool, PoolDetail, PoolCreateRequest, Disk } from '../types';
+import type { Pool, PoolDetail, PoolCreateRequest, Disk, ScrubSchedule, ScrubScheduleCreateRequest } from '../types';
 
 export async function listPools(): Promise<Pool[]> {
   const res = await client.get<Pool[]>('/pools');
@@ -39,4 +39,24 @@ export async function importPool(name: string): Promise<void> {
 export async function listDisks(): Promise<Disk[]> {
   const res = await client.get<Disk[]>('/pools/disks');
   return res.data;
+}
+
+// Scrub scheduling
+export async function listScrubSchedules(): Promise<ScrubSchedule[]> {
+  const res = await client.get<ScrubSchedule[]>('/pools/schedules/scrub');
+  return res.data;
+}
+
+export async function createScrubSchedule(poolName: string, data: ScrubScheduleCreateRequest): Promise<ScrubSchedule> {
+  const res = await client.post<ScrubSchedule>(`/pools/${poolName}/schedule/scrub`, data);
+  return res.data;
+}
+
+export async function updateScrubSchedule(poolName: string, data: Partial<ScrubSchedule>): Promise<ScrubSchedule> {
+  const res = await client.patch<ScrubSchedule>(`/pools/${poolName}/schedule/scrub`, data);
+  return res.data;
+}
+
+export async function deleteScrubSchedule(poolName: string): Promise<void> {
+  await client.delete(`/pools/${poolName}/schedule/scrub`);
 }

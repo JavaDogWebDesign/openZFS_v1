@@ -13,6 +13,7 @@ if config.config_file_name is not None:
 from backend.database import Base
 from backend.auth.models import Session, AuditLog  # noqa: F401
 from backend.shares.models import NFSExport  # noqa: F401
+from backend.pools.models import ScrubSchedule  # noqa: F401
 
 target_metadata = Base.metadata
 

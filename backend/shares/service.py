@@ -45,6 +45,15 @@ async def reload_smb() -> dict:
         raise HTTPException(status_code=500, detail=f"Failed to reload Samba: {e}")
 
 
+async def get_user_shares(username: str) -> list[dict]:
+    """Get shares where user appears in valid_users or write_list."""
+    shares = smb_manager.read_shares()
+    return [
+        s for s in shares
+        if username in s.get("valid_users", []) or username in s.get("write_list", [])
+    ]
+
+
 # --- NFS ---
 
 async def list_nfs_exports(db: AsyncSession) -> list[dict]:

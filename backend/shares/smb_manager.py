@@ -36,6 +36,13 @@ def _parse_smb_conf(content: str) -> list[dict[str, Any]]:
                 "read_only": False,
                 "guest_ok": False,
                 "valid_users": [],
+                "write_list": [],
+                "create_mask": "",
+                "directory_mask": "",
+                "force_user": "",
+                "force_group": "",
+                "inherit_permissions": False,
+                "vfs_objects": [],
             }
         elif current_share is not None and "=" in stripped:
             key, _, value = stripped.partition("=")
@@ -54,6 +61,20 @@ def _parse_smb_conf(content: str) -> list[dict[str, Any]]:
                 current_share["guest_ok"] = value.lower() in ("yes", "true", "1")
             elif key == "valid_users":
                 current_share["valid_users"] = [u.strip() for u in value.split(",") if u.strip()]
+            elif key == "write_list":
+                current_share["write_list"] = [u.strip() for u in value.split(",") if u.strip()]
+            elif key == "create_mask":
+                current_share["create_mask"] = value
+            elif key == "directory_mask":
+                current_share["directory_mask"] = value
+            elif key == "force_user":
+                current_share["force_user"] = value
+            elif key == "force_group":
+                current_share["force_group"] = value
+            elif key == "inherit_permissions":
+                current_share["inherit_permissions"] = value.lower() in ("yes", "true", "1")
+            elif key == "vfs_objects":
+                current_share["vfs_objects"] = [o.strip() for o in value.split() if o.strip()]
 
     if current_share is not None:
         shares.append(current_share)
@@ -75,6 +96,20 @@ def _render_smb_conf(shares: list[dict[str, Any]]) -> str:
         lines.append(f"   guest ok = {'yes' if share.get('guest_ok', False) else 'no'}")
         if share.get("valid_users"):
             lines.append(f"   valid users = {', '.join(share['valid_users'])}")
+        if share.get("write_list"):
+            lines.append(f"   write list = {', '.join(share['write_list'])}")
+        if share.get("create_mask"):
+            lines.append(f"   create mask = {share['create_mask']}")
+        if share.get("directory_mask"):
+            lines.append(f"   directory mask = {share['directory_mask']}")
+        if share.get("force_user"):
+            lines.append(f"   force user = {share['force_user']}")
+        if share.get("force_group"):
+            lines.append(f"   force group = {share['force_group']}")
+        if share.get("inherit_permissions"):
+            lines.append("   inherit permissions = yes")
+        if share.get("vfs_objects"):
+            lines.append(f"   vfs objects = {' '.join(share['vfs_objects'])}")
         lines.append("")
 
     return "\n".join(lines)

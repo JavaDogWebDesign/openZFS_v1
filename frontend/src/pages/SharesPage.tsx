@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listSMBShares, createSMBShare, deleteSMBShare, reloadSMB, listNFSExports, createNFSExport, deleteNFSExport, reloadNFS } from '../api/shares';
+import { listSMBShares, createSMBShare, updateSMBShare, deleteSMBShare, reloadSMB, listNFSExports, createNFSExport, deleteNFSExport, reloadNFS } from '../api/shares';
 import ShareList from '../components/shares/ShareList';
 import SMBShareForm from '../components/shares/SMBShareForm';
 import NFSExportForm from '../components/shares/NFSExportForm';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import { PlusIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import type { SMBShare, SMBShareCreateRequest } from '../types';
 
 export default function SharesPage() {
   const [activeTab, setActiveTab] = useState<'smb' | 'nfs'>('smb');
   const [showCreate, setShowCreate] = useState(false);
+  const [editingShare, setEditingShare] = useState<SMBShare | null>(null);
   const [confirmDeleteSmb, setConfirmDeleteSmb] = useState<string | null>(null);
   const [confirmDeleteNfs, setConfirmDeleteNfs] = useState<number | null>(null);
   const queryClient = useQueryClient();
@@ -22,6 +24,14 @@ export default function SharesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['smb-shares'] });
       setShowCreate(false);
+    },
+  });
+
+  const updateSmbMutation = useMutation({
+    mutationFn: ({ name, data }: { name: string; data: Partial<SMBShare> }) => updateSMBShare(name, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['smb-shares'] });
+      setEditingShare(null);
     },
   });
 
@@ -55,17 +65,17 @@ export default function SharesPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900">File Shares</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">File Shares</h2>
         <div className="flex gap-2">
           <button
             onClick={() => activeTab === 'smb' ? reloadSmbMutation.mutate() : reloadNfsMutation.mutate()}
-            className="flex items-center gap-1 rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="flex items-center gap-1 rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
           >
             <ArrowPathIcon className="h-4 w-4" />
             Reload {activeTab === 'smb' ? 'Samba' : 'NFS'}
           </button>
           <button
-            onClick={() => setShowCreate(!showCreate)}
+            onClick={() => { setShowCreate(!showCreate); setEditingShare(null); }}
             className="flex items-center gap-1 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
           >
             <PlusIcon className="h-4 w-4" />
@@ -76,9 +86,18 @@ export default function SharesPage() {
 
       {showCreate && activeTab === 'smb' && (
         <SMBShareForm
-          onSubmit={(data) => createSmbMutation.mutate(data)}
+          onSubmit={(data) => createSmbMutation.mutate(data as SMBShareCreateRequest)}
           onCancel={() => setShowCreate(false)}
           isSubmitting={createSmbMutation.isPending}
+        />
+      )}
+
+      {editingShare && activeTab === 'smb' && (
+        <SMBShareForm
+          initialData={editingShare}
+          onSubmit={(data) => updateSmbMutation.mutate({ name: editingShare.name, data })}
+          onCancel={() => setEditingShare(null)}
+          isSubmitting={updateSmbMutation.isPending}
         />
       )}
 
@@ -94,9 +113,10 @@ export default function SharesPage() {
         smbShares={smbShares}
         nfsExports={nfsExports}
         activeTab={activeTab}
-        onTabChange={(tab) => { setActiveTab(tab); setShowCreate(false); }}
+        onTabChange={(tab) => { setActiveTab(tab); setShowCreate(false); setEditingShare(null); }}
         onDeleteSmb={(name) => setConfirmDeleteSmb(name)}
         onDeleteNfs={(id) => setConfirmDeleteNfs(id)}
+        onEditSmb={(share) => { setEditingShare(share); setShowCreate(false); }}
       />
 
       <ConfirmDialog

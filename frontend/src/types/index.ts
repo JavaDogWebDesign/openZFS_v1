@@ -48,6 +48,9 @@ export interface PoolCreateRequest {
   vdev_type: 'stripe' | 'mirror' | 'raidz' | 'raidz2' | 'raidz3';
   disks: string[];
   properties: Record<string, string>;
+  fs_properties?: Record<string, string>;
+  force?: boolean;
+  mountpoint?: string;
 }
 
 export interface Disk {
@@ -66,6 +69,29 @@ export interface DiskPartition {
   size: number;
   mountpoint: string;
   fstype: string;
+}
+
+// Drives (with SMART)
+export interface SmartInfo {
+  available: boolean;
+  healthy: boolean | null;
+  temperature: number | null;
+  power_on_hours: number | null;
+  model_family: string | null;
+  rotation_rate: number | null;
+}
+
+export interface DriveInfo {
+  name: string;
+  path: string;
+  size: number;
+  model: string;
+  serial: string;
+  type: 'HDD' | 'SSD' | 'NVMe';
+  partitions: DiskPartition[];
+  in_use: boolean;
+  pool: string | null;
+  smart: SmartInfo;
 }
 
 // Datasets
@@ -118,6 +144,13 @@ export interface SMBShare {
   read_only: boolean;
   guest_ok: boolean;
   valid_users: string[];
+  write_list: string[];
+  create_mask: string;
+  directory_mask: string;
+  force_user: string;
+  force_group: string;
+  inherit_permissions: boolean;
+  vfs_objects: string[];
 }
 
 export interface SMBShareCreateRequest {
@@ -128,6 +161,13 @@ export interface SMBShareCreateRequest {
   read_only?: boolean;
   guest_ok?: boolean;
   valid_users?: string[];
+  write_list?: string[];
+  create_mask?: string;
+  directory_mask?: string;
+  force_user?: string;
+  force_group?: string;
+  inherit_permissions?: boolean;
+  vfs_objects?: string[];
 }
 
 // NFS Exports
@@ -142,6 +182,30 @@ export interface NFSExportCreateRequest {
   path: string;
   client?: string;
   options?: string;
+}
+
+// Scrub Scheduling
+export interface ScrubSchedule {
+  id: number;
+  pool: string;
+  frequency: 'daily' | 'weekly' | 'monthly';
+  day_of_week: number;
+  day_of_month: number;
+  hour: number;
+  minute: number;
+  enabled: boolean;
+  last_run: number | null;
+  last_status: string | null;
+  created_at: string;
+}
+
+export interface ScrubScheduleCreateRequest {
+  pool: string;
+  frequency?: string;
+  day_of_week?: number;
+  day_of_month?: number;
+  hour?: number;
+  minute?: number;
 }
 
 // WebSocket

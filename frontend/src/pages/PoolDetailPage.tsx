@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getPool, listPools } from '../api/pools';
 import DiskUsageChart from '../components/pools/DiskUsageChart';
+import ScrubScheduleForm from '../components/pools/ScrubScheduleForm';
 import { healthColor } from '../utils/format';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
@@ -20,16 +21,16 @@ export default function PoolDetailPage() {
   }
 
   if (!detail) {
-    return <div className="p-8 text-center text-gray-500">Pool not found</div>;
+    return <div className="p-8 text-center text-gray-500 dark:text-gray-400">Pool not found</div>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Link to="/pools" className="rounded-md p-1 hover:bg-gray-100">
-          <ArrowLeftIcon className="h-5 w-5 text-gray-500" />
+        <Link to="/pools" className="rounded-md p-1 hover:bg-gray-100 dark:hover:bg-gray-700">
+          <ArrowLeftIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
         </Link>
-        <h2 className="text-xl font-bold text-gray-900">{detail.name}</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{detail.name}</h2>
         <span className={`rounded-full px-2 py-1 text-xs font-semibold ${healthColor(detail.state)}`}>
           {detail.state}
         </span>
@@ -37,41 +38,41 @@ export default function PoolDetailPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {poolSummary && (
-          <div className="rounded-lg border border-gray-200 bg-white p-5">
-            <h3 className="mb-3 font-semibold text-gray-900">Disk Usage</h3>
+          <div className="rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+            <h3 className="mb-3 font-semibold text-gray-900 dark:text-gray-100">Disk Usage</h3>
             <DiskUsageChart pool={poolSummary} />
           </div>
         )}
 
-        <div className="rounded-lg border border-gray-200 bg-white p-5">
-          <h3 className="mb-3 font-semibold text-gray-900">Pool Info</h3>
+        <div className="rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+          <h3 className="mb-3 font-semibold text-gray-900 dark:text-gray-100">Pool Info</h3>
           <dl className="space-y-2">
             <div className="flex justify-between text-sm">
-              <dt className="text-gray-500">Status</dt>
-              <dd className="font-medium">{detail.status || 'None'}</dd>
+              <dt className="text-gray-500 dark:text-gray-400">Status</dt>
+              <dd className="font-medium dark:text-gray-200">{detail.status || 'None'}</dd>
             </div>
             <div className="flex justify-between text-sm">
-              <dt className="text-gray-500">Scan</dt>
-              <dd className="font-medium">{detail.scan || 'None'}</dd>
+              <dt className="text-gray-500 dark:text-gray-400">Scan</dt>
+              <dd className="font-medium dark:text-gray-200">{detail.scan || 'None'}</dd>
             </div>
             <div className="flex justify-between text-sm">
-              <dt className="text-gray-500">Errors</dt>
-              <dd className="font-medium">{detail.errors || 'None'}</dd>
+              <dt className="text-gray-500 dark:text-gray-400">Errors</dt>
+              <dd className="font-medium dark:text-gray-200">{detail.errors || 'None'}</dd>
             </div>
           </dl>
         </div>
       </div>
 
-      <div className="rounded-lg border border-gray-200 bg-white p-5">
-        <h3 className="mb-3 font-semibold text-gray-900">VDEV Configuration</h3>
+      <div className="rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+        <h3 className="mb-3 font-semibold text-gray-900 dark:text-gray-100">VDEV Configuration</h3>
         {detail.config.length === 0 ? (
-          <p className="text-sm text-gray-500">No configuration data</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">No configuration data</p>
         ) : (
           <div className="space-y-3">
             {detail.config.map((vdev, i) => (
-              <div key={i} className="rounded-md border border-gray-100 p-3">
+              <div key={i} className="rounded-md border border-gray-100 p-3 dark:border-gray-700">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-900">{vdev.name}</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{vdev.name}</span>
                   <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${healthColor(vdev.state)}`}>
                     {vdev.state}
                   </span>
@@ -80,7 +81,7 @@ export default function PoolDetailPage() {
                   <div className="mt-2 ml-4 space-y-1">
                     {vdev.children.map((child, j) => (
                       <div key={j} className="flex items-center gap-2 text-sm">
-                        <span className="text-gray-700">{child.name}</span>
+                        <span className="text-gray-700 dark:text-gray-300">{child.name}</span>
                         <span className={`rounded-full px-1.5 py-0.5 text-xs ${healthColor(child.state)}`}>
                           {child.state}
                         </span>
@@ -96,6 +97,8 @@ export default function PoolDetailPage() {
           </div>
         )}
       </div>
+
+      <ScrubScheduleForm poolName={name!} />
     </div>
   );
 }

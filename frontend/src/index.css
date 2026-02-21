@@ -1,3 +1,14 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --color-chart-bg: #f9fafb;
+    --color-chart-text: #374151;
+  }
+  .dark {
+    --color-chart-bg: #1f2937;
+    --color-chart-text: #d1d5db;
+  }
+}

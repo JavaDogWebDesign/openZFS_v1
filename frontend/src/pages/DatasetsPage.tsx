@@ -75,7 +75,7 @@ export default function DatasetsPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900">Datasets</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Datasets</h2>
         <button
           onClick={() => setShowCreate(!showCreate)}
           className="flex items-center gap-1 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
@@ -101,7 +101,7 @@ export default function DatasetsPage() {
 
       {datasets.length > 0 && (
         <div className="space-y-3">
-          <h3 className="font-semibold text-gray-900">Snapshots</h3>
+          <h3 className="font-semibold text-gray-900 dark:text-gray-100">Snapshots</h3>
           <div className="flex flex-wrap gap-2">
             {datasets.filter((d) => d.type === 'filesystem').map((ds) => (
               <button
@@ -110,7 +110,7 @@ export default function DatasetsPage() {
                 className={`rounded-md px-3 py-1 text-sm ${
                   selectedDataset === ds.name
                     ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                 }`}
               >
                 {ds.name}
